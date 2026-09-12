@@ -8,6 +8,10 @@
   spec number in `specs/active/`.
 - Fixes: `fix/S-<nnn>-<short-name>`; refactors: `refactor/S-<nnn>-<short-name>`;
   incidents: `incident/<yyyy-mm-dd>-<short-name>`.
+- A small bug fix taken through `workflows/bug-fix.md` has no spec, so it has no number: it uses
+  `fix/<short-name>`, and the pull request carries the **report** — expected versus actual, and how it
+  was found — where a spec link would otherwise go. A fix that changes behaviour is a feature and
+  gets a spec like any other.
 - Branches are short-lived: rebase on `main` rather than letting a branch age.
 
 ## Commits
