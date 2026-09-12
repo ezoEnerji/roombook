@@ -14,7 +14,7 @@
 | BusinessHours | The half-open local-time window `[open, close)` in which a Room may be booked; default `[09:00, 18:00)` in that Room's time zone. | Evaluated in the Room's time zone, never in UTC (BR-1). Half-open like TimeSlot: a Booking may *end* exactly at `close`, but may not *start* there. |
 | Organizer | The person a Booking belongs to; free-text name in V1. | Not a `User` entity — V1 has no identity model at all (see `docs/security.md`). |
 | AvailableSlot | A candidate result of an availability search: the Room plus a TimeSlot that fits the requested duration and breaks no rejection rule. | Never stored; computed per request. Not a Booking. |
-| Availability search | Given a duration, a date-time window and optionally a Room, returns AvailableSlots aligned to a 15-minute grid, earliest first. | Not a free/busy dump — it answers "where does my meeting fit?". |
+| Availability search | Given a duration, a date-time window and optionally a Room, returns AvailableSlots aligned to a 15-minute grid, earliest first. Each contiguous free stretch contributes its earliest *acceptable* candidate and no more. | Not a free/busy dump — it answers "where does my meeting fit?". Returning every quarter hour that fits would bury one useful answer under a hundred near-identical ones. |
 | 15-minute grid | Candidate start times anchored to the Room's local clock at `:00`, `:15`, `:30`, `:45`. | A property of search *results* only; Bookings themselves are never grid-aligned. |
 
 ## Business rules

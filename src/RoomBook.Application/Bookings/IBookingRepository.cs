@@ -17,4 +17,13 @@ public interface IBookingRepository
     /// The booking with this identifier, or a failure carrying <c>booking.not_found</c>.
     /// </summary>
     ValueTask<Result<Booking>> FindAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The bookings in one room that touch a window. Scoped rather than "all bookings" so the
+    /// availability search does not grow with the size of the store.
+    /// </summary>
+    ValueTask<IReadOnlyList<Booking>> ListForRoomAsync(
+        Guid roomId,
+        TimeSlot window,
+        CancellationToken cancellationToken);
 }

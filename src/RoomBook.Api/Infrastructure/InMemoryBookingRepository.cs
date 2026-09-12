@@ -34,6 +34,21 @@ public sealed class InMemoryBookingRepository : IBookingRepository
         }
     }
 
+    public ValueTask<IReadOnlyList<Booking>> ListForRoomAsync(
+        Guid roomId,
+        TimeSlot window,
+        CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            IReadOnlyList<Booking> touching = _bookings.Values
+                .Where(booking => booking.RoomId == roomId && booking.Slot.Overlaps(window))
+                .ToList();
+
+            return ValueTask.FromResult(touching);
+        }
+    }
+
     public ValueTask<Result<Booking>> FindAsync(Guid id, CancellationToken cancellationToken)
     {
         lock (_gate)
