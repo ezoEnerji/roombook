@@ -57,6 +57,36 @@ public sealed record Room
         return start >= Hours.Open && start < Hours.Close && end <= Hours.Close;
     }
 
+    /// <summary>
+    /// The UTC window this room's opening hours occupy on one of its local days. This is the only
+    /// place a whole day is converted, so daylight-saving arithmetic lives in one method instead of
+    /// being repeated by every caller that needs to know when a room is open.
+    /// </summary>
+    public TimeSlot BusinessWindowOn(DateOnly localDate)
+    {
+        TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+
+        return TimeSlot.Create(ToUtc(localDate, Hours.Open, zone), ToUtc(localDate, Hours.Close, zone)).Value;
+    }
+
+    private static DateTimeOffset ToUtc(DateOnly date, TimeOnly time, TimeZoneInfo zone)
+    {
+        DateTime local = date.ToDateTime(time, DateTimeKind.Unspecified);
+
+        if (zone.IsInvalidTime(local))
+        {
+            // The local clock skipped this time when the offset changed, so the room opens at the
+            // first moment that does exist. Only reachable if a zone shifts during business hours.
+            local = local.Add(zone.GetAdjustmentRules()
+                .First(rule => rule.DateStart <= local && local <= rule.DateEnd)
+                .DaylightDelta);
+        }
+
+        // An ambiguous local time (the hour that happens twice) resolves to the standard offset,
+        // which is what TimeZoneInfo returns and is deterministic either way.
+        return new DateTimeOffset(local, zone.GetUtcOffset(local)).ToUniversalTime();
+    }
+
     public static Result<Room> Create(
         Guid id,
         string name,

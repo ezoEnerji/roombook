@@ -27,6 +27,7 @@ builder.Services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
 builder.Services.AddScoped<ListRoomsUseCase>();
 builder.Services.AddScoped<CreateBookingUseCase>();
 builder.Services.AddScoped<GetBookingUseCase>();
+builder.Services.AddScoped<SearchAvailabilityUseCase>();
 
 WebApplication app = builder.Build();
 
@@ -34,6 +35,7 @@ app.UseRequestBodyLimit();
 
 app.MapRooms();
 app.MapBookings();
+app.MapAvailability();
 
 app.Run();
 

@@ -87,6 +87,12 @@ the booking no longer exists, so it is an identifier question rather than a BR-9
 - The 15-minute grid belongs to availability search results only and is anchored to the room's local
   clock (`:00`, `:15`, `:30`, `:45`). Booking times themselves are never rounded, snapped or
   realigned — `10:07` is a legitimate start (`docs/domain.md`, explicit non-rules).
+- An availability search asks with `durationMinutes` (a whole number) and an explicit `from`/`to`
+  window; both ends are required, because a default would answer a question nobody asked. An answer
+  carries **at most 50 candidates**, truncated after ordering so the earliest survive. A requested
+  length outside the bookable range is refused with `booking.duration_out_of_range` rather than
+  answered with an empty list — "no booking may be this long" and "nothing is free" are different
+  answers, and a caller acts on them differently.
 
 ## Enforced by tooling
 
