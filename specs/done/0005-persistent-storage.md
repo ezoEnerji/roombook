@@ -1,6 +1,6 @@
 # Spec 0005 — Persistent storage
 
-- Status: Draft
+- Status: Shipped
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0005-plan.md`
 
@@ -98,17 +98,38 @@ retries, performance tuning, and any change to the HTTP contract.
 - [ ] AC-11 — Restarting twice does not duplicate the seeded rooms.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof — including **AC-2, whose proof is that it fails**:
+      the two diffs are in the pull request and the reasoning is in ADR-0005
+- [x] `scripts/check` green — 207 tests, with no database service installed
+- [x] Independent review done; real findings fixed, the rest accepted with written rationale — one
+      review round in a separate read-only session, which found a real defect
+- [x] Docs / ADRs updated — ADR-0005, the module table, the FD-6 clause, the closed known limit, and
+      the out-of-scope lists that had gone stale
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 1 — a note recording the outcome next to the constraint it contradicts. No criterion was loosened: AC-2 is left failed rather than rewritten to match what happened |
+| Fix rounds | 1 |
+| Review findings | 11: one major, six minor, four nits. 7 fixed, 4 accepted with written rationale, 0 rejected as noise |
+| Regressions introduced | 0 — all 201 inherited tests passed against the new store with their assertions untouched |
+| Bugs escaped to production | 0 — not deployed. One defect reached the pull request and was caught by review (below) |
+
+## The defect this slice produced, and why it matters
+
+`RemoveAsync` read "zero rows deleted" as "the booking has started", when it also means "somebody
+else deleted it first" — in which case the truthful answer is `404`. **The cause was not a missing
+insight: the plan already said to ask again in the same transaction, and the code skipped it.** I had
+even written "reporting not found here would be cheaper and untrue" in a comment while doing the
+mirror image of that.
+
+Worth recording because it is the failure mode a plan cannot prevent on its own, and the reason the
+producer does not review its own work.
+
+## What the experiment answered
+
+ADR-0001's claim held for all nine business rules, all six endpoints and all 201 existing tests, and
+failed in exactly two structural places — a rehydration entry point in the domain, and the current
+instant on the cancellation port. Both are recorded in ADR-0005 with the alternatives that were
+rejected and why. The reasoning in ADR-0001 was sound; its scope was a little too confident.
