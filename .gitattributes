@@ -1,0 +1,8 @@
+# Normalise line endings in the repository to LF. Without this, files authored on Windows are
+# committed with CRLF and `dotnet format --verify-no-changes` fails on the Linux CI runner,
+# which reads `end_of_line = lf` from .editorconfig.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary

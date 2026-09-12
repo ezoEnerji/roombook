@@ -1,6 +1,6 @@
 # Spec 0001 — Solution skeleton and room listing
 
-- Status: Draft
+- Status: In progress
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0001-plan.md`
 
