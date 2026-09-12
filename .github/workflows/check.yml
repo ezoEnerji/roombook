@@ -15,12 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # The bootstrap workflow may add toolchain setup steps here (e.g. setup-dotnet, setup-node)
-      # to match the commands it writes into scripts/check.conf.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
       - name: Verification contract
         run: |
           if [ -f scripts/check.conf ]; then
             ./scripts/check
           else
             echo "scripts/check.conf not present yet (pre-bootstrap) — skipping."
+          fi
+      - name: Vulnerable packages
+        run: |
+          if ls **/*.sln >/dev/null 2>&1 || ls *.sln >/dev/null 2>&1; then
+            dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln.txt
+            ! grep -q 'has the following vulnerable packages' vuln.txt
+          else
+            echo "no solution yet — skipping vulnerability scan."
           fi

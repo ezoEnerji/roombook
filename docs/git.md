@@ -1,18 +1,31 @@
 # Git
 
-> **Template — adjust at bootstrap.** Defaults below are safe; loosen consciously, not accidentally.
+> Set at bootstrap. Trunk-based with short-lived branches; loosen consciously, not accidentally.
 
 ## Branching
-- `feature/<spec-no>-<short-name>` — **no branch without a spec.**
-- Fixes: `fix/<spec-no>-<short-name>`; incidents: `incident/<date>-<short-name>`.
+- `main` is the only long-lived branch and is always releasable.
+- `feat/S-<nnn>-<short-name>` for new behavior — **no branch without a spec.** The `S-<nnn>` is the
+  spec number in `specs/active/`.
+- Fixes: `fix/S-<nnn>-<short-name>`; refactors: `refactor/S-<nnn>-<short-name>`;
+  incidents: `incident/<yyyy-mm-dd>-<short-name>`.
+- Branches are short-lived: rebase on `main` rather than letting a branch age.
 
 ## Commits
-- Conventional Commits, with a plan reference: `feat(catalog): paging endpoint [plan 0001/3]`.
+- Conventional Commits with the spec reference in the subject:
+  `feat(booking): reject overlapping bookings (S-002)`.
 - Agent commits follow the same standard: the agent writes the message, the human approves.
+- A commit message describes behavior change, never "fixed review comments".
 
 ## Forbidden
-- Direct commits to the default branch.
-- Force push, history rewriting on shared branches. Undo = `git revert` (see recovery R-11).
+- Direct commits or pushes to `main` — everything goes through a pull request.
+- Force push and history rewriting on `main` or any shared branch. Undo = `git revert` (recovery R-11).
+- Editing files under `specs/done/` — shipped specs are immutable (invariant 7). A PR that touches them
+  is rejected.
+- Merging with a red or unrun `scripts/check`.
 
 ## Pull requests
-- PR template checklist completed; `scripts/check` green in CI; squash-merge.
+- PR template checklist completed; `scripts/check` green in CI; **squash-merge** so each spec lands as
+  one commit on `main`.
+- Evidence of independent review (a separate session or read-only subagent working from the diff and
+  the spec) is part of the PR — the producer's own confirmation does not count (invariant 3).
+- The PR body maps every acceptance criterion to its proof.
