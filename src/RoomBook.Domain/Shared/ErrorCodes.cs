@@ -13,6 +13,7 @@ public static class ErrorCodes
     public const string RoomNotFound = "room.not_found";
     public const string BookingNotFound = "booking.not_found";
     public const string BookingOverlap = "booking.overlap";
+    public const string CancelAfterStart = "booking.cancel_after_start";
     public const string OutsideBusinessHours = "booking.outside_business_hours";
     public const string DurationOutOfRange = "booking.duration_out_of_range";
     public const string AttendeesExceedCapacity = "booking.attendees_exceed_capacity";

@@ -16,9 +16,6 @@ public sealed class SearchAvailabilityUseCase
     /// <summary>Documented in `docs/conventions.md`: an answer carries at most this many candidates.</summary>
     public const int MaxCandidates = 50;
 
-    /// <summary>Documented in `docs/security.md`: how much time one question may cover.</summary>
-    public static readonly TimeSpan MaxWindow = TimeSpan.FromDays(31);
-
     private readonly IRoomRepository _rooms;
     private readonly IBookingRepository _bookings;
     private readonly TimeProvider _clock;
@@ -45,17 +42,10 @@ public sealed class SearchAvailabilityUseCase
                 $"A booking lasts between {Booking.MinimumDuration.TotalMinutes:0} minutes and {Booking.MaximumDuration.TotalHours:0} hours.");
         }
 
-        Result<TimeSlot> requested = TimeSlot.Create(query.From, query.To);
+        Result<TimeSlot> requested = QueryWindow.Create(query.From, query.To);
         if (requested.IsFailure)
         {
             return Failure(requested.Error);
-        }
-
-        if (requested.Value.Duration > MaxWindow)
-        {
-            return Failure(
-                ErrorCodes.RequestInvalid,
-                $"A search covers at most {MaxWindow.Days} days.");
         }
 
         Result<IReadOnlyList<Room>> rooms = await ChooseRoomsAsync(query, cancellationToken);
@@ -80,7 +70,7 @@ public sealed class SearchAvailabilityUseCase
 
         foreach (Room room in rooms.Value)
         {
-            IReadOnlyList<Booking> booked = await _bookings.ListForRoomAsync(room.Id, searchable, cancellationToken);
+            IReadOnlyList<Booking> booked = await _bookings.ListAsync(searchable, room.Id, cancellationToken);
 
             candidates.AddRange(AvailabilitySearch.Find(
                 room,

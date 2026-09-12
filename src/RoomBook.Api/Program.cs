@@ -28,6 +28,8 @@ builder.Services.AddScoped<ListRoomsUseCase>();
 builder.Services.AddScoped<CreateBookingUseCase>();
 builder.Services.AddScoped<GetBookingUseCase>();
 builder.Services.AddScoped<SearchAvailabilityUseCase>();
+builder.Services.AddScoped<CancelBookingUseCase>();
+builder.Services.AddScoped<ListBookingsUseCase>();
 
 WebApplication app = builder.Build();
 

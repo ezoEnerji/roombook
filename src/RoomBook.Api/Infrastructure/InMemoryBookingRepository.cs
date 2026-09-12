@@ -34,18 +34,34 @@ public sealed class InMemoryBookingRepository : IBookingRepository
         }
     }
 
-    public ValueTask<IReadOnlyList<Booking>> ListForRoomAsync(
-        Guid roomId,
+    public ValueTask<IReadOnlyList<Booking>> ListAsync(
         TimeSlot window,
+        Guid? roomId,
         CancellationToken cancellationToken)
     {
         lock (_gate)
         {
             IReadOnlyList<Booking> touching = _bookings.Values
-                .Where(booking => booking.RoomId == roomId && booking.Slot.Overlaps(window))
+                .Where(booking => roomId is null || booking.RoomId == roomId)
+                .Where(booking => booking.Slot.Overlaps(window))
                 .ToList();
 
             return ValueTask.FromResult(touching);
+        }
+    }
+
+    public ValueTask<Result<Booking>> RemoveAsync(Guid id, CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            if (!_bookings.Remove(id, out Booking? removed))
+            {
+                return ValueTask.FromResult(Result<Booking>.Failure(
+                    ErrorCodes.BookingNotFound,
+                    "There is no booking with that identifier."));
+            }
+
+            return ValueTask.FromResult(Result<Booking>.Success(removed));
         }
     }
 

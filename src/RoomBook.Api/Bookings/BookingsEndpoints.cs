@@ -14,9 +14,73 @@ public static class BookingsEndpoints
     {
         routes.MapPost("/bookings", CreateAsync);
 
+        routes.MapGet("/bookings", ListAsync);
+
         routes.MapGet("/bookings/{id:guid}", GetAsync).WithName(GetBookingRouteName);
 
+        routes.MapDelete("/bookings/{id:guid}", CancelAsync);
+
         return routes;
+    }
+
+    private static async Task<IResult> ListAsync(
+        HttpRequest request,
+        ListBookingsUseCase listBookings,
+        CancellationToken cancellationToken)
+    {
+        Result<ListBookingsQuery> query = ParseList(request.Query);
+        if (query.IsFailure)
+        {
+            return ErrorResponses.From(query.Error);
+        }
+
+        Result<IReadOnlyList<Booking>> bookings = await listBookings.ExecuteAsync(query.Value, cancellationToken);
+
+        return bookings.IsFailure
+            ? ErrorResponses.From(bookings.Error)
+            : Results.Ok(bookings.Value.Select(BookingResponse.From).ToList());
+    }
+
+    private static async Task<IResult> CancelAsync(
+        Guid id,
+        CancelBookingUseCase cancelBooking,
+        CancellationToken cancellationToken)
+    {
+        Result<Booking> cancelled = await cancelBooking.ExecuteAsync(id, cancellationToken);
+
+        return cancelled.IsFailure
+            ? ErrorResponses.From(cancelled.Error)
+            : Results.NoContent();
+    }
+
+    private static Result<ListBookingsQuery> ParseList(IQueryCollection query)
+    {
+        if (!QueryValues.TryInstant(query, "from", out DateTimeOffset? from) || from is null)
+        {
+            return Result<ListBookingsQuery>.Failure(
+                ErrorCodes.RequestInvalid,
+                "from is required and must be a UTC instant ending in 'Z'.");
+        }
+
+        if (!QueryValues.TryInstant(query, "to", out DateTimeOffset? to) || to is null)
+        {
+            return Result<ListBookingsQuery>.Failure(
+                ErrorCodes.RequestInvalid,
+                "to is required and must be a UTC instant ending in 'Z'.");
+        }
+
+        Guid? roomId = null;
+        if (QueryValues.Has(query, "roomId"))
+        {
+            if (!QueryValues.TryGuid(query, "roomId", out Guid? parsed) || parsed is null)
+            {
+                return Result<ListBookingsQuery>.Failure(ErrorCodes.RequestInvalid, "roomId must be a GUID.");
+            }
+
+            roomId = parsed;
+        }
+
+        return Result<ListBookingsQuery>.Success(new ListBookingsQuery(from.Value, to.Value, roomId));
     }
 
     private static async Task<IResult> CreateAsync(

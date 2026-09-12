@@ -18,6 +18,7 @@ public static class ErrorResponses
         [ErrorCodes.RoomNotFound] = StatusCodes.Status404NotFound,
         [ErrorCodes.BookingNotFound] = StatusCodes.Status404NotFound,
         [ErrorCodes.BookingOverlap] = StatusCodes.Status409Conflict,
+        [ErrorCodes.CancelAfterStart] = StatusCodes.Status409Conflict,
         [ErrorCodes.OutsideBusinessHours] = UnprocessableContent,
         [ErrorCodes.DurationOutOfRange] = UnprocessableContent,
         [ErrorCodes.AttendeesExceedCapacity] = UnprocessableContent,

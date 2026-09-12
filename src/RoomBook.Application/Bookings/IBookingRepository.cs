@@ -19,11 +19,19 @@ public interface IBookingRepository
     ValueTask<Result<Booking>> FindAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The bookings in one room that touch a window. Scoped rather than "all bookings" so the
-    /// availability search does not grow with the size of the store.
+    /// The bookings that touch a window, optionally narrowed to one room. Always scoped by time
+    /// rather than "all bookings", so neither the availability search nor a listing grows with the
+    /// size of the store.
     /// </summary>
-    ValueTask<IReadOnlyList<Booking>> ListForRoomAsync(
-        Guid roomId,
+    ValueTask<IReadOnlyList<Booking>> ListAsync(
         TimeSlot window,
+        Guid? roomId,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Removes the booking and returns it, or reports <c>booking.not_found</c> if it has already
+    /// gone. This is the single arbiter of a cancellation race: two callers can both decide a
+    /// booking is cancellable, and only one of them can remove it.
+    /// </summary>
+    ValueTask<Result<Booking>> RemoveAsync(Guid id, CancellationToken cancellationToken);
 }
