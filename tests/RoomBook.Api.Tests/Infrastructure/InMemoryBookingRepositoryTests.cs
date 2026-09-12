@@ -56,6 +56,66 @@ public sealed class InMemoryBookingRepositoryTests
     }
 
     [Fact]
+    public async Task RemoveAsync_WhenManyThreadsCancelTheSameBooking_SucceedsExactlyOnce()
+    {
+        // Cancelling is find-then-remove, so two callers can both decide a booking is cancellable.
+        // The removal is the arbiter: one of them takes it, the rest are told it is gone.
+        InMemoryBookingRepository repository = new();
+        Room room = Room();
+        Booking booking = Booking(room);
+        CancellationToken token = Token;
+
+        await repository.AddIfNoOverlapAsync(booking, token);
+
+        IReadOnlyList<Result<Booking>> results = await Task.WhenAll(
+            Enumerable.Range(0, Attempts)
+                .Select(_ => Task.Run(async () => await repository.RemoveAsync(booking.Id, token), token)));
+
+        Assert.Equal(1, results.Count(result => result.IsSuccess));
+        Assert.All(
+            results.Where(result => result.IsFailure),
+            result => Assert.Equal(ErrorCodes.BookingNotFound, result.Error.Code));
+    }
+
+    [Fact]
+    public async Task RemoveAsync_ThenListing_NoLongerReturnsTheBooking()
+    {
+        InMemoryBookingRepository repository = new();
+        Room room = Room();
+        Booking booking = Booking(room);
+
+        await repository.AddIfNoOverlapAsync(booking, Token);
+        await repository.RemoveAsync(booking.Id, Token);
+
+        IReadOnlyList<Booking> listed = await repository.ListAsync(booking.Slot, roomId: null, Token);
+
+        Assert.Empty(listed);
+    }
+
+    [Fact]
+    public async Task ListAsync_WithoutARoom_ReturnsEveryRoomsBookings()
+    {
+        InMemoryBookingRepository repository = new();
+        Room first = Room();
+        Room second = Domain.Rooms.Room.Create(
+            Guid.CreateVersion7(),
+            "Boğaziçi",
+            8,
+            "Europe/Istanbul",
+            BusinessHours.Create(new TimeOnly(9, 0), new TimeOnly(18, 0)).Value).Value;
+
+        await repository.AddIfNoOverlapAsync(Booking(first), Token);
+        await repository.AddIfNoOverlapAsync(Booking(second), Token);
+
+        TimeSlot wholeDay = TimeSlot.Create(
+            new DateTimeOffset(2026, 9, 14, 6, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 9, 14, 15, 0, 0, TimeSpan.Zero)).Value;
+
+        Assert.Equal(2, (await repository.ListAsync(wholeDay, roomId: null, Token)).Count);
+        Assert.Single(await repository.ListAsync(wholeDay, first.Id, Token));
+    }
+
+    [Fact]
     public async Task FindAsync_WhenTheBookingIsAbsent_ReturnsBookingNotFound()
     {
         InMemoryBookingRepository repository = new();

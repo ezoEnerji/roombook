@@ -93,6 +93,10 @@ the booking no longer exists, so it is an identifier question rather than a BR-9
   length outside the bookable range is refused with `booking.duration_out_of_range` rather than
   answered with an empty list — "no booking may be this long" and "nothing is free" are different
   answers, and a caller acts on them differently.
+- A booking listing asks with the same `from`/`to` window and the same 31-day limit, and carries **at
+  most 200 bookings**, also truncated after ordering. The two caps differ deliberately: suggestions
+  are more useful when there are few of them, while a truncated list of facts hides reality, so that
+  bound exists only to keep a response finite.
 
 ## Enforced by tooling
 

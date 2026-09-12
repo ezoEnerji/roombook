@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Time.Testing;
+using RoomBook.Api.Tests.Stubs;
 using RoomBook.Application.Bookings;
-using RoomBook.Application.Rooms;
 using RoomBook.Domain.Bookings;
 using RoomBook.Domain.Rooms;
 using RoomBook.Domain.Shared;
@@ -150,53 +150,4 @@ public sealed class SearchAvailabilityCapTests
         "Europe/Istanbul",
         BusinessHours.Create(new TimeOnly(9, 0), new TimeOnly(18, 0)).Value).Value;
 
-    private sealed class StubRoomRepository : IRoomRepository
-    {
-        private readonly IReadOnlyList<Room> _rooms;
-
-        public StubRoomRepository(IReadOnlyList<Room> rooms)
-        {
-            _rooms = rooms;
-        }
-
-        public ValueTask<IReadOnlyList<Room>> GetAllAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromResult(_rooms);
-
-        public ValueTask<Result<Room>> FindAsync(Guid id, CancellationToken cancellationToken)
-        {
-            Room? room = _rooms.FirstOrDefault(candidate => candidate.Id == id);
-
-            return ValueTask.FromResult(room is null
-                ? Result<Room>.Failure(ErrorCodes.RoomNotFound, "no room")
-                : Result<Room>.Success(room));
-        }
-    }
-
-    private sealed class StubBookingRepository : IBookingRepository
-    {
-        private readonly IReadOnlyList<Booking> _bookings;
-
-        public StubBookingRepository(IReadOnlyList<Booking> bookings)
-        {
-            _bookings = bookings;
-        }
-
-        public ValueTask<IReadOnlyList<Booking>> ListForRoomAsync(
-            Guid roomId,
-            TimeSlot window,
-            CancellationToken cancellationToken)
-        {
-            IReadOnlyList<Booking> touching = _bookings
-                .Where(booking => booking.RoomId == roomId && booking.Slot.Overlaps(window))
-                .ToList();
-
-            return ValueTask.FromResult(touching);
-        }
-
-        public ValueTask<Result<Booking>> AddIfNoOverlapAsync(Booking booking, CancellationToken cancellationToken) =>
-            throw new NotSupportedException("The availability search never writes.");
-
-        public ValueTask<Result<Booking>> FindAsync(Guid id, CancellationToken cancellationToken) =>
-            throw new NotSupportedException("The availability search never reads one booking.");
-    }
 }

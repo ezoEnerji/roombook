@@ -42,6 +42,17 @@ public sealed record Booking
 
     public int AttendeeCount { get; }
 
+    /// <summary>
+    /// BR-9: a booking may be cancelled only before it starts. A meeting already in progress is not
+    /// something the system pretends never happened, so the refusal is a rule violation rather than
+    /// a missing record — which is what a caller cancelling twice gets instead.
+    /// </summary>
+    public Result<Booking> EnsureCancellableAt(DateTimeOffset nowUtc) => Slot.Start <= nowUtc
+        ? Result<Booking>.Failure(
+            ErrorCodes.CancelAfterStart,
+            "A booking can only be cancelled before it starts.")
+        : Result<Booking>.Success(this);
+
     public static Result<Booking> Create(
         Guid id,
         Room room,
