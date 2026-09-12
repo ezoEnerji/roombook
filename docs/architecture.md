@@ -93,6 +93,7 @@ amendments S-005 made to ADR-0001's claim.
 
 ## Deliberately out of scope
 
-Persistent storage, authentication and authorisation (V2 — see `docs/security.md`), multi-office and
-multi-tenancy, recurring bookings, editing a booking, notifications and calendar sync, caching,
-messaging/queues, and horizontal scaling.
+Authentication and authorisation (V2 — see `docs/security.md`), multi-office and multi-tenancy,
+recurring bookings, editing a booking, notifications and calendar sync, caching, messaging/queues, and
+horizontal scaling. Persistent storage left this list in S-005; schema migrations took its place and
+are the first thing the next schema change will need (ADR-0005).

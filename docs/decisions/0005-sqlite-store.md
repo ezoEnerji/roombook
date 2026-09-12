@@ -47,13 +47,19 @@ is enough for one schema version and will need a real answer the first time a co
 
 ADR-0001 claimed that swapping the store would be "one new adapter plus one DI line, with zero changes
 to domain code". Measured against `main`, the claim held for every business rule, every endpoint and
-all 203 existing tests — none of which changed. It failed in exactly two structural places:
+all 201 existing tests — none of which changed. It failed in exactly two structural places:
 
 1. **The domain needed a way back in.** `Booking.Create` judges the rules against "now", so using it
    to rebuild a stored booking would reject every booking the moment it starts. `Booking.Rehydrate`
    exists so a store can hand a value back without re-judging history. Persistence ignorance means
    the domain knows nothing about the store; it does not mean the store can reconstruct a value
    without being given an entry point.
+   <br>Two alternatives existed and both were worse: calling `Create` with a fabricated instant — say
+   one minute before the booking starts — would "validate" stored history against a time that never
+   happened and would hide a row that genuinely broke a rule; and an internal constructor with
+   `InternalsVisibleTo` would couple the domain to an adapter by name. So the honest phrasing is that
+   the domain needed *an* entry point and this is the one we chose, not that no other mechanism could
+   have been made to work.
 2. **The port had to learn about time.** Making BR-2 atomic needed nothing new — an overlap is judged
    from the candidate alone. Making BR-9 atomic needed the current instant inside the store, so
    `RemoveAsync` gained a `nowUtc` parameter. The alternative was an adapter reading the clock itself,

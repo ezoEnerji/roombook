@@ -128,18 +128,28 @@ public sealed class SqliteBookingRepository : IBookingRepository
         delete.Parameters.AddWithValue("@now", nowUtc.UtcTicks);
 
         int removed = await delete.ExecuteNonQueryAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
         if (removed == 1)
         {
+            await transaction.CommitAsync(cancellationToken);
+
             return Result<Booking>.Success(booking);
         }
 
-        // The row was there a moment ago and the condition refused it, so the booking has started.
-        // Reporting "not found" here would be cheaper and untrue.
-        return Result<Booking>.Failure(
-            ErrorCodes.CancelAfterStart,
-            "A booking can only be cancelled before it starts.");
+        // Nothing was deleted, and that has two causes: the booking has started, or another caller
+        // removed it between the read above and this delete. Asking again — in the same transaction —
+        // is the difference between telling the caller the truth and telling them whichever answer
+        // was cheaper to guess.
+        bool stillThere = await ReadOneAsync(connection, transaction, id, cancellationToken) is not null;
+        await transaction.CommitAsync(cancellationToken);
+
+        return stillThere
+            ? Result<Booking>.Failure(
+                ErrorCodes.CancelAfterStart,
+                "A booking can only be cancelled before it starts.")
+            : Result<Booking>.Failure(
+                ErrorCodes.BookingNotFound,
+                "There is no booking with that identifier.");
     }
 
     private static async Task<Booking?> ReadOneAsync(

@@ -91,7 +91,9 @@ public sealed class RoomBookStore : IDisposable
         connection.Open();
 
         // Writers serialise in SQLite; waiting briefly is the difference between a queue and an error.
-        Execute(connection, transaction: null, "PRAGMA busy_timeout = 5000;");
+        // Write-ahead logging lets readers carry on while one writer works — a no-op for an in-memory
+        // database, which is why it is issued unconditionally rather than guarded by a string check.
+        Execute(connection, transaction: null, "PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;");
 
         return connection;
     }

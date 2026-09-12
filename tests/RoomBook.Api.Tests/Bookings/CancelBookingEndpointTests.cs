@@ -133,6 +133,34 @@ public sealed class CancelBookingEndpointTests
     }
 
     [Fact]
+    public async Task Delete_WhenTwoCallersCancelAtOnce_OneSucceedsAndTheOtherIsToldItIsGone()
+    {
+        // The loser of a cancellation race must hear "it is gone", not "it has started". Both are
+        // ways of saying no, and only one of them is true — the store is asked again before it
+        // answers, in the same transaction.
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient first = application.CreateClient();
+        using HttpClient second = application.CreateClient();
+        Uri booking = await CreateAsync(first);
+
+        HttpResponseMessage[] responses = await Task.WhenAll(
+            first.DeleteAsync(booking, Token),
+            second.DeleteAsync(booking, Token));
+
+        Assert.Equal(1, responses.Count(response => response.StatusCode == HttpStatusCode.NoContent));
+
+        HttpResponseMessage loser = Assert.Single(
+            responses,
+            response => response.StatusCode == HttpStatusCode.NotFound);
+        Assert.Equal(ErrorCodes.BookingNotFound, await CodeAsync(loser, Token));
+
+        foreach (HttpResponseMessage response in responses)
+        {
+            response.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task Delete_WhenRefused_ReturnsAProblemDocumentWithItsCode()
     {
         FakeTimeProvider clock = Clock();

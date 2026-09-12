@@ -75,6 +75,6 @@ Written down because their absence is a decision, not an omission:
 
 ## Deliberately out of scope in V1
 
-Persistent storage, authentication and per-user ownership, multi-office/multi-tenancy, recurring
-bookings, editing an existing Booking (cancel and create instead), attendee invitations,
-notifications, external calendar sync, and room equipment/features.
+Authentication and per-user ownership, multi-office/multi-tenancy, recurring bookings, editing an
+existing Booking (cancel and create instead), attendee invitations, notifications, external calendar
+sync, and room equipment/features. Persistent storage was on this list until S-005 shipped it.

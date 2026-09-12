@@ -43,7 +43,9 @@ retries, performance tuning, and any change to the HTTP contract.
 
 - **`RoomBook.Domain` and `RoomBook.Application` do not change.** This is the experiment, not a
   convenience: if either must change, that is the finding and it belongs in the report rather than in
-  a quiet commit.
+  a quiet commit. *(Outcome: both changed, in exactly two places — a rehydration entry point in the
+  domain and the instant on the cancellation port. AC-2 therefore fails on purpose and stays failed;
+  ADR-0005 carries the reasoning.)*
 - FD-6 in `docs/architecture.md` bans EF Core and any ORM "in V1", and `docs/security.md` requires an
   ADR for any new dependency. Both are decided explicitly at the plan gate and recorded in an ADR —
   this slice cannot proceed by treating them as formalities.

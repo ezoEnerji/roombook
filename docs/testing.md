@@ -12,7 +12,9 @@
 
 - **xUnit v3**. Assertions are xUnit's built-ins; FluentAssertions is a banned dependency (FD-6).
 - `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`) supplies time in every test.
-- HTTP tests use `WebApplicationFactory` against the real composition root with the in-memory adapter.
+- HTTP tests use `WebApplicationFactory` against the real composition root and the real store: each
+  host gets its own SQLite database, named uniquely and held in memory, so tests share nothing. The
+  tests that prove persistence use a temp file, because nothing in memory survives a restart.
 
 | Project | Covers |
 |---|---|
