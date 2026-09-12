@@ -32,25 +32,44 @@ point of having them.
 - Endpoints call use cases. An endpoint never touches a repository and never holds a business rule.
 - Use cases reach storage only through ports, never through a concrete repository type.
 - The domain never calls out: it receives plain data and returns a result. No I/O, no clock, no logging.
+- **The clock belongs to `Application`.** It holds the injected `TimeProvider` and passes the current
+  instant into domain functions as a plain `DateTimeOffset` value. `TimeProvider` is never injected into
+  domain types — that would give the domain a service dependency it is defined not to have.
 - Direct in-process calls only. No events, queues or background processing in V1 — introducing one is
   an ADR, not an implementation detail.
 
+## HTTP surface
+
+REST/JSON, resource-oriented — decided at bootstrap. Request and response shapes belong to the spec
+that builds each route, not to this file:
+
+| Route | Purpose |
+|---|---|
+| `POST /bookings` | Create a booking; rejection rules BR-1, BR-2, BR-4, BR-6, BR-7, BR-8 apply |
+| `GET /bookings` | List bookings |
+| `DELETE /bookings/{id}` | Cancel a booking (BR-9) |
+| `GET /rooms` | List rooms |
+| `GET /availability` | Search free slots that fit a requested duration |
+
 ## Forbidden dependencies (make them testable)
 
-Asserted by architecture tests that run inside `scripts/check`:
+To be asserted by architecture tests, which start running inside `scripts/check` when S-001 activates
+its steps. Until then these rules are binding on review, not yet machine-checked:
 
 - **FD-1** `RoomBook.Domain` references no project and no NuGet package — BCL only.
 - **FD-2** `RoomBook.Domain` and `RoomBook.Application` contain no ASP.NET Core types (`HttpContext`,
   `IResult`, `ControllerBase`, `ProblemDetails`) and no `Microsoft.AspNetCore.*` reference.
 - **FD-3** No production code reads the ambient clock (`DateTime.Now/UtcNow`,
-  `DateTimeOffset.Now/UtcNow`); "now" arrives through an injected `TimeProvider`.
+  `DateTimeOffset.Now/UtcNow`). The current instant enters through the `TimeProvider` injected into
+  `Application` and travels onward as a value.
 - **FD-4** No service locator and no static mutable state — dependencies arrive by constructor injection.
 - **FD-5** Domain types are never serialised into an HTTP body; the API owns its own DTO records.
 - **FD-6** Banned packages: MediatR and CQRS infrastructure, AutoMapper and other auto-mappers,
   Newtonsoft.Json, EF Core or any ORM (V1), FluentAssertions. Any new dependency requires an ADR.
 
-Direction is additionally enforced by the compiler: project references only point inward, so a reverse
-reference cannot compile. The tests exist for the rules the compiler cannot see (FD-3, FD-4, FD-6).
+The tests cover FD-1…FD-6. Reference *direction* is additionally enforced by the compiler — project
+references only point inward, so a reverse reference cannot compile — which makes FD-3, FD-4 and FD-6
+the rules that would otherwise go unnoticed until review.
 
 ## Deliberately out of scope
 

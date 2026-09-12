@@ -3,8 +3,11 @@
 > Filled at bootstrap. Baseline rules agents must honor in every plan and review.
 
 ## Secrets
-- Secrets never enter the repo, specs, prompts, or chat. `.env` is gitignored; provide `.env.example`.
+- Secrets never enter the repo, specs, prompts, or chat. `.env` is gitignored.
 - Agents never print secret values, even when debugging.
+- V1 has no secrets at all — no database, no identity provider, no third-party API — so no `.env`
+  exists yet. The first change that introduces a configuration secret creates `.env.example`
+  alongside it; until then there is deliberately nothing to template.
 - Configuration comes from environment variables or `dotnet user-secrets`; `appsettings*.json` holds
   no credentials.
 
@@ -12,7 +15,8 @@
 - All external input is validated at the API edge (shape, field limits, ranges); the domain validates
   the same constraints again as a second line of defence. Neither layer trusts the other.
 - Field limits: `title` ≤ 200 characters, `organizer` ≤ 100 characters, `attendeeCount` ≥ 1 and
-  ≤ `room.capacity`, availability queries span at most 31 days. Request bodies are size-limited.
+  ≤ `room.capacity`, `room.capacity` ≥ 1, availability queries span at most 31 days, request bodies at
+  most 32 KB.
 - Unknown JSON members are rejected rather than ignored, so a typo can never be silently accepted.
 - CORS is disabled by default; a wildcard (`*`) origin is forbidden. Allowed origins are configuration.
 - Error responses carry an error code and a short message only — never stack traces, exception type

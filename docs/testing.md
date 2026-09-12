@@ -20,15 +20,33 @@
 | `tests/RoomBook.Architecture.Tests` | Forbidden dependencies FD-1…FD-6. |
 
 The weight sits in the domain because that is where the rules are; HTTP tests prove the contract, not
-the rules. Naming follows `Method_Scenario_ExpectedResult` (`docs/conventions.md`).
+the rules. Naming follows `Method_Scenario_ExpectedResult` (`docs/conventions.md`). All three projects
+are created by S-001, which is also where `scripts/check` stops being a no-op and starts running them.
 
 ## What must be tested
 
-- **Every business rule** BR-1…BR-9: at least one accepting case and one rejecting case each, with the
-  rejecting case asserting the specific error code from the mapping table in `docs/conventions.md`.
-- **Boundary cases of the interval algebra**: touching endpoints (BR-3 — must be accepted), exact
-  15-minute and 4-hour durations (BR-4 — accepted), one minute either side (rejected), the 90-day edge
-  (BR-7), and a booking that would cross the end of business hours (BR-1).
+- **Every rejection rule** (BR-1, BR-2, BR-4, BR-6, BR-7, BR-8, BR-9): at least one accepting and one
+  rejecting case each, with the rejecting case asserting the specific error code from the mapping table
+  in `docs/conventions.md`.
+- **BR-3 and BR-5 are tested differently**, because neither rejects anything. BR-3 needs an *accepting*
+  test — a booking starting exactly when another ends is created successfully — and its neighbouring
+  rejection is already covered by BR-2's overlap test. BR-5 is tested at the API edge: a malformed,
+  missing or non-UTC timestamp comes back as `request.invalid`, and responses serialise as ISO-8601 `Z`.
+- **The decided boundaries**, each one accepting or rejecting with no room for interpretation:
+
+| Case | Expected |
+|---|---|
+| Booking ends exactly at closing time (17:00–18:00, close 18:00) | accepted (BR-1) |
+| Booking starts exactly at closing time | rejected (BR-1) |
+| Booking starts exactly when another in the same room ends | accepted (BR-3) |
+| Duration exactly 15 minutes / exactly 4 hours | accepted (BR-4) |
+| Duration 14 minutes / 4 hours 1 minute | rejected (BR-4) |
+| `start == now` | rejected (BR-8) |
+| `start == now + 90 days` | accepted (BR-7) |
+| `start == now + 90 days + 1 minute` | rejected (BR-7) |
+| Cancel exactly at the booking's start | rejected (BR-9) |
+| Cancel the same booking twice | second call is `booking.not_found` |
+| Create at `10:07` with a valid duration | accepted — no grid alignment on create |
 - **Time-zone behaviour**: a room whose business hours are evaluated in a non-UTC zone, including a
   daylight-saving transition day.
 - **Availability search**: returned slots align to the 15-minute grid, are ordered earliest-first, and
