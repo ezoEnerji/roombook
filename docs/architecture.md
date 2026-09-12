@@ -56,20 +56,30 @@ that builds each route, not to this file:
 To be asserted by architecture tests, which start running inside `scripts/check` when S-001 activates
 its steps. Until then these rules are binding on review, not yet machine-checked:
 
-- **FD-1** `RoomBook.Domain` references no project and no NuGet package — BCL only.
+- **FD-1** `RoomBook.Domain` references no project and no NuGet package — BCL only. The check covers
+  `Directory.Build.props` as well as the project file, because a package declared there reaches the
+  domain just as surely.
 - **FD-2** `RoomBook.Domain` and `RoomBook.Application` contain no ASP.NET Core types (`HttpContext`,
   `IResult`, `ControllerBase`, `ProblemDetails`) and no `Microsoft.AspNetCore.*` reference.
 - **FD-3** No production code reads the ambient clock (`DateTime.Now/UtcNow`,
   `DateTimeOffset.Now/UtcNow`). The current instant enters through the `TimeProvider` injected into
   `Application` and travels onward as a value.
 - **FD-4** No service locator and no static mutable state — dependencies arrive by constructor injection.
-- **FD-5** Domain types are never serialised into an HTTP body; the API owns its own DTO records.
+- **FD-5** Domain types are never serialised into an HTTP body; the API owns its own DTO records. The
+  static rule inspects contract types by name, so it cannot see an endpoint returning a domain object
+  from a lambda; that half is enforced behaviourally by a test asserting the exact JSON property set.
 - **FD-6** Banned packages: MediatR and CQRS infrastructure, AutoMapper and other auto-mappers,
   Newtonsoft.Json, EF Core or any ORM (V1), FluentAssertions. Any new dependency requires an ADR.
 
-The tests cover FD-1…FD-6. Reference *direction* is additionally enforced by the compiler — project
-references only point inward, so a reverse reference cannot compile — which makes FD-3, FD-4 and FD-6
-the rules that would otherwise go unnoticed until review.
+The tests cover FD-1…FD-6, and each rule is proven twice: it passes on the real code, and it detects a
+violation — either in a synthetic input or in `tests/RoomBook.Architecture.Fixtures`, an assembly that
+breaks FD-2 to FD-5 on purpose. Reference *direction* is additionally enforced by the compiler, since
+project references only point inward, which makes FD-3, FD-4 and FD-6 the rules that would otherwise
+go unnoticed until review.
+
+Known limit: the ambient-clock check (FD-3) reads assembly metadata, so a clock reached through
+reflection would not appear in it. That is an accepted gap while nothing in the product depends on
+time; it should be revisited when the time-dependent rules (BR-7, BR-8, BR-9) are implemented.
 
 ## Deliberately out of scope
 

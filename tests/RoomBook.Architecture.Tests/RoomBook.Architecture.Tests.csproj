@@ -16,6 +16,11 @@
     <ProjectReference Include="..\..\src\RoomBook.Application\RoomBook.Application.csproj" />
     <ProjectReference Include="..\..\src\RoomBook.Api\RoomBook.Api.csproj" />
   </ItemGroup>
+
+  <!-- The assembly that breaks every rule on purpose, so the rules can be proven on compiled code. -->
+  <ItemGroup>
+    <ProjectReference Include="..\RoomBook.Architecture.Fixtures\RoomBook.Architecture.Fixtures.csproj" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">

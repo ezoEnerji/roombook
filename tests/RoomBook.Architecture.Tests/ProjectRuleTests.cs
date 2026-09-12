@@ -17,6 +17,14 @@ public sealed class ProjectRuleTests
         </Project>
         """;
 
+    private const string PropsWithPackage = """
+        <Project>
+          <ItemGroup>
+            <PackageReference Include="Serilog" Version="4.0.0" />
+          </ItemGroup>
+        </Project>
+        """;
+
     private const string ProjectWithBannedPackage = """
         <Project Sdk="Microsoft.NET.Sdk">
           <ItemGroup>
@@ -44,9 +52,27 @@ public sealed class ProjectRuleTests
     }
 
     [Fact]
-    public void BannedPackageReferences_ForEveryProjectInTheRepository_FindsNone()
+    public void References_ForTheSharedBuildProps_FindsNone()
     {
-        List<string> violations = Repository.AllProjectFilePaths()
+        // Directory.Build.props applies to every project, so a package declared there reaches
+        // RoomBook.Domain just as surely as one written in its own csproj.
+        IReadOnlyList<string> references = ProjectRules.References(Repository.ReadProjectFile("Directory.Build.props"));
+
+        Assert.Empty(references);
+    }
+
+    [Fact]
+    public void References_WhenSharedBuildPropsDeclareAPackage_FindsIt()
+    {
+        IReadOnlyList<string> references = ProjectRules.References(PropsWithPackage);
+
+        Assert.Equal(["Serilog"], references);
+    }
+
+    [Fact]
+    public void BannedPackageReferences_ForEveryBuildFileInTheRepository_FindsNone()
+    {
+        List<string> violations = Repository.AllBuildFilePaths()
             .SelectMany(path => ProjectRules.BannedPackageReferences(File.ReadAllText(path))
                 .Select(package => $"{Path.GetFileName(path)}: {package}"))
             .ToList();
@@ -63,12 +89,15 @@ public sealed class ProjectRuleTests
     }
 
     [Fact]
-    public void AllProjectFilePaths_FindsEveryProjectInTheSolution()
+    public void AllBuildFilePaths_FindsEveryProjectAndSharedBuildFile()
     {
-        IReadOnlyList<string> paths = Repository.AllProjectFilePaths();
+        IReadOnlyList<string> projects = Repository.AllProjectFilePaths();
+        IReadOnlyList<string> buildFiles = Repository.AllBuildFilePaths();
 
-        // Six projects: three under src, three test projects. A sweep that finds nothing would
-        // report success for every rule, so the count is part of the contract.
-        Assert.Equal(6, paths.Count);
+        // Seven projects: three under src, three test projects, and the deliberately violating
+        // fixture. Plus Directory.Build.props. A sweep that finds nothing would report success for
+        // every rule, so the counts are part of the contract.
+        Assert.Equal(7, projects.Count);
+        Assert.Equal(8, buildFiles.Count);
     }
 }

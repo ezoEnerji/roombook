@@ -55,8 +55,10 @@ BR-1…BR-9. The only domain rule here is the one that decides whether a Room ma
 - [ ] AC-1 — `./scripts/check` runs format, build and test steps (it is no longer a no-op) and exits
       green; the same command is green in CI on the pull request.
 - [ ] AC-2 — Every forbidden dependency FD-1…FD-6 is expressed as a pure inspection rule, and each rule
-      is tested twice: it passes on the real code and fails on a synthetic violating input. A rule that
-      has only ever been seen to pass is not evidence that it works.
+      is tested twice: it passes on the real code and detects a violation. A rule that has only ever
+      been seen to pass is not evidence that it works. Detection is proven against a synthetic input
+      *and*, for the rules that read compiled output, against an assembly that breaks them on purpose —
+      otherwise a broken metadata reader would keep every rule silently green.
 - [ ] AC-3 — Listing rooms returns `200` with all three seeded rooms, each carrying an identifier, a
       name, a capacity, an IANA time zone, an opening time and a closing time as local `HH:mm` values,
       serialised in `camelCase`.
@@ -67,6 +69,8 @@ BR-1…BR-9. The only domain rule here is the one that decides whether a Room ma
 - [ ] AC-7 — A Room with a time zone the system cannot resolve is rejected at construction.
 - [ ] AC-8 — A Room whose opening time is not before its closing time is rejected at construction.
 - [ ] AC-9 — Room identifiers are stable across restarts, so a client may store one and use it later.
+      The published identifier of each seeded room is asserted by value; "the two calls agree with
+      each other" is not proof, because both could drift together.
 
 ## Definition of Done
 - [ ] Every acceptance criterion mapped to proof (test or reproducible observation)

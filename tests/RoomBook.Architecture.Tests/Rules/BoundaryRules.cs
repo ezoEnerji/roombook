@@ -43,7 +43,15 @@ public static class BoundaryRules
             .Where(member => ServiceLocatorMembers.Contains(member, StringComparer.Ordinal))
             .ToList();
 
-    /// <summary>FD-5: domain types exposed on the wire instead of the API's own DTOs.</summary>
+    /// <summary>
+    /// FD-5: domain types exposed on the wire instead of the API's own DTOs.
+    /// <para>
+    /// Known limit: this inspects contract types by naming convention, so it cannot see an endpoint
+    /// that returns a domain object straight from a minimal-API lambda. That hole is closed at the
+    /// behavioural level instead — `Get_ReturnsExactlyTheDocumentedFields` asserts the exact JSON
+    /// property set, which changes the moment a domain type is serialised.
+    /// </para>
+    /// </summary>
     public static IReadOnlyList<string> DomainTypesOnTheWire(
         IReadOnlyList<PropertyFact> wireProperties,
         string domainAssemblyName) =>

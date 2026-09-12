@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- This project exists to break the architecture rules on purpose, so the rules can be proven
+       to detect a real compiled violation rather than only a hand-built fact list. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RoomBook.Domain\RoomBook.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
