@@ -37,6 +37,9 @@ internal sealed class StubBookingRepository : IBookingRepository
     public ValueTask<Result<Booking>> FindAsync(Guid id, CancellationToken cancellationToken) =>
         throw new NotSupportedException("This stub serves read-only use cases.");
 
-    public ValueTask<Result<Booking>> RemoveAsync(Guid id, CancellationToken cancellationToken) =>
+    public ValueTask<Result<Booking>> RemoveAsync(
+        Guid id,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken) =>
         throw new NotSupportedException("This stub serves read-only use cases.");
 }

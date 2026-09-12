@@ -20,11 +20,12 @@ persistence and identity are explicit later steps, not hidden assumptions (ADR-0
 | `src/RoomBook.Domain` | The domain model and every business rule (BR-1…BR-9): time-slot algebra, conflict detection, availability search. Pure, no I/O. | `Room`, `Booking`, `TimeSlot`, `BusinessHours`, rule outcomes and error codes |
 | `src/RoomBook.Application` | Use cases orchestrating the domain behind ports: create booking, cancel booking, list bookings, list rooms, search availability. | Ports (`IBookingRepository`, `IRoomRepository`), use-case contracts, `Result` outcomes |
 | `src/RoomBook.Api` | HTTP adapter and composition root: routing, DTOs, edge validation, ProblemDetails mapping, DI wiring, configuration. | HTTP contract, request/response DTOs, error-code → status mapping |
-| `src/RoomBook.Api/Infrastructure` | The V1 storage adapter: in-memory implementations of the ports plus seeded room data. | `InMemoryBookingRepository`, `InMemoryRoomRepository` |
+| `src/RoomBook.Infrastructure` | The storage adapter: SQLite behind the ports, the schema, and the seeded rooms. The only project with a database dependency. | `RoomBookStore`, `SqliteRoomRepository`, `SqliteBookingRepository`, `SeedRooms` |
 
-The storage adapter sits inside the API project only while it is in-memory. When a database arrives it
-moves to its own `src/RoomBook.Infrastructure` project — the ports do not change, which is the whole
-point of having them.
+The storage adapter moved into its own project when the database arrived (S-005, ADR-0005), as this
+document said it would. The ports survived that move almost intact: every rule, every endpoint and
+every test stayed as it was, and the two things that did have to change are recorded in ADR-0005 — the
+domain gained a rehydration entry point, and the cancellation port gained the current instant.
 
 ## Communication rules
 
@@ -70,7 +71,9 @@ its steps. Until then these rules are binding on review, not yet machine-checked
   static rule inspects contract types by name, so it cannot see an endpoint returning a domain object
   from a lambda; that half is enforced behaviourally by a test asserting the exact JSON property set.
 - **FD-6** Banned packages: MediatR and CQRS infrastructure, AutoMapper and other auto-mappers,
-  Newtonsoft.Json, EF Core or any ORM (V1), FluentAssertions. Any new dependency requires an ADR.
+  Newtonsoft.Json, EF Core or any ORM, FluentAssertions. Any new dependency requires an ADR. The
+  SQLite driver (`Microsoft.Data.Sqlite`, ADR-0005) is allowed in `RoomBook.Infrastructure` and
+  nowhere else: it is a driver, not an ORM, and the ban stands as written.
 
 The tests cover FD-1…FD-6, and each rule is proven twice: it passes on the real code, and it detects a
 violation — either in a synthetic input or in `tests/RoomBook.Architecture.Fixtures`, an assembly that
@@ -82,14 +85,15 @@ Known limit: the ambient-clock check (FD-3) reads assembly metadata, so a clock 
 reflection would not appear in it. That is an accepted gap while nothing in the product depends on
 time; it should be revisited when the time-dependent rules (BR-7, BR-8, BR-9) are implemented.
 
-Known limit: **cancelling is three steps** — find the booking, ask the domain whether BR-9 permits it,
-remove it — and the instant is read once, in the middle. With the in-memory adapter the removal
-completes synchronously under a lock, so a booking cannot realistically start in the gap. A store that
-answers over a network widens that gap, and the adapter for it must judge BR-9 and remove inside one
-transaction with a freshly read instant, rather than trusting the sequence above.
+~~Known limit: cancelling is three steps and the instant is read in the middle.~~ **Closed in S-005**
+(ADR-0005): the store judges BR-9 and deletes in one conditional statement, against the instant the
+use case read, so nothing can start in the gap. The domain still owns the rule; the SQL condition
+owns the atomicity. The port gained a parameter to make that possible, which is one of the two
+amendments S-005 made to ADR-0001's claim.
 
 ## Deliberately out of scope
 
-Persistent storage, authentication and authorisation (V2 — see `docs/security.md`), multi-office and
-multi-tenancy, recurring bookings, editing a booking, notifications and calendar sync, caching,
-messaging/queues, and horizontal scaling.
+Authentication and authorisation (V2 — see `docs/security.md`), multi-office and multi-tenancy,
+recurring bookings, editing a booking, notifications and calendar sync, caching, messaging/queues, and
+horizontal scaling. Persistent storage left this list in S-005; schema migrations took its place and
+are the first thing the next schema change will need (ADR-0005).
