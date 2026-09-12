@@ -93,8 +93,12 @@ public sealed class ListRoomsEndpointTests
     [Fact]
     public async Task Get_WhenThereAreNoRooms_Returns200AndAnEmptyArray()
     {
-        using RoomBookApplication application = new(rooms: []);
+        using RoomBookApplication application = new();
         using HttpClient client = application.CreateClient();
+
+        // An installation with no rooms is now made rather than injected: the store seeds them at
+        // startup, so emptying it is the honest way to reach the state this asserts.
+        await application.EmptyTheRoomsAsync(Token);
 
         HttpResponseMessage response = await client.GetAsync(new Uri("/rooms", UriKind.Relative), Token);
 

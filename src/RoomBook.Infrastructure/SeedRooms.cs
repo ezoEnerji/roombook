@@ -1,6 +1,6 @@
 using RoomBook.Domain.Rooms;
 
-namespace RoomBook.Api.Infrastructure;
+namespace RoomBook.Infrastructure;
 
 /// <summary>
 /// The rooms of the single office this version serves. Identifiers are fixed literals rather than

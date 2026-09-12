@@ -15,6 +15,11 @@ Thumbs.db
 # .NET build output
 bin/
 obj/
+
+# SQLite databases (created on first run; never committed)
+*.db
+*.db-shm
+*.db-wal
 [Tt]est[Rr]esults/
 *.user
 .vs/

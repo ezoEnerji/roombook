@@ -94,15 +94,15 @@ public sealed class ProjectRuleTests
         IReadOnlyList<string> projects = Repository.AllProjectFilePaths();
         IReadOnlyList<string> buildFiles = Repository.AllBuildFilePaths();
 
-        // Seven projects: three under src, three test projects, and the deliberately violating
-        // fixture. Plus Directory.Build.props. A sweep that finds nothing would report success for
-        // every rule, so the counts are part of the contract.
+        // Eight projects: four under src — the store became its own after S-005 — three test
+        // projects, and the deliberately violating fixture. Plus Directory.Build.props. A sweep that
+        // finds nothing would report success for every rule, so the counts are part of the contract.
         Assert.True(
-            projects.Count == 7,
-            $"Expected 7 projects, found {projects.Count}: {StringsOf(projects)}");
+            projects.Count == 8,
+            $"Expected 8 projects, found {projects.Count}: {StringsOf(projects)}");
         Assert.True(
-            buildFiles.Count == 8,
-            $"Expected 8 build files, found {buildFiles.Count}: {StringsOf(buildFiles)}");
+            buildFiles.Count == 9,
+            $"Expected 9 build files, found {buildFiles.Count}: {StringsOf(buildFiles)}");
     }
 
     /// <summary>

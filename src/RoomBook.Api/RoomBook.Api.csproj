@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RoomBook.Application\RoomBook.Application.csproj" />
+    <ProjectReference Include="..\RoomBook.Infrastructure\RoomBook.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -43,6 +43,26 @@ public sealed record Booking
     public int AttendeeCount { get; }
 
     /// <summary>
+    /// Rebuilds a booking that was accepted earlier and stored. The rules are deliberately **not**
+    /// re-run: they were judged when the booking was created, against the instant that applied then.
+    /// Judging them again here would reject every booking the moment it starts — the opposite of
+    /// remembering it — and would make reading the past depend on the present.
+    /// <para>
+    /// This exists because a store has to be able to hand a booking back. Persistence ignorance means
+    /// the domain knows nothing about the store; it does not mean the store can rebuild a value
+    /// without being given a way in.
+    /// </para>
+    /// </summary>
+    public static Booking Rehydrate(
+        Guid id,
+        Guid roomId,
+        string title,
+        string organizer,
+        TimeSlot slot,
+        int attendeeCount) =>
+        new(id, roomId, title, organizer, slot, attendeeCount);
+
+    /// <summary>
     /// BR-9: a booking may be cancelled only before it starts. A meeting already in progress is not
     /// something the system pretends never happened, so the refusal is a rule violation rather than
     /// a missing record — which is what a caller cancelling twice gets instead.

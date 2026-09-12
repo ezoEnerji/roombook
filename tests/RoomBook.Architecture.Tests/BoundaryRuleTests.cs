@@ -3,6 +3,7 @@ using RoomBook.Api.Rooms;
 using RoomBook.Application.Rooms;
 using RoomBook.Architecture.Tests.Rules;
 using RoomBook.Domain.Rooms;
+using RoomBook.Infrastructure;
 
 namespace RoomBook.Architecture.Tests;
 
@@ -18,8 +19,10 @@ public sealed class BoundaryRuleTests
 
     private static Assembly ApiAssembly => typeof(RoomResponse).Assembly;
 
+    private static Assembly InfrastructureAssembly => typeof(RoomBookStore).Assembly;
+
     private static IReadOnlyList<Assembly> ProductionAssemblies =>
-        [DomainAssembly, ApplicationAssembly, ApiAssembly];
+        [DomainAssembly, ApplicationAssembly, ApiAssembly, InfrastructureAssembly];
 
     private static IReadOnlyList<Assembly> InwardAssemblies => [DomainAssembly, ApplicationAssembly];
 

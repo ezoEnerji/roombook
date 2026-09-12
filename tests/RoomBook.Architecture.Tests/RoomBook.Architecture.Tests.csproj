@@ -20,6 +20,7 @@
   <!-- The assembly that breaks every rule on purpose, so the rules can be proven on compiled code. -->
   <ItemGroup>
     <ProjectReference Include="..\RoomBook.Architecture.Fixtures\RoomBook.Architecture.Fixtures.csproj" />
+    <ProjectReference Include="..\..\src\RoomBook.Infrastructure\RoomBook.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />

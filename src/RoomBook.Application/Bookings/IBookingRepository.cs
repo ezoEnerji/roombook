@@ -29,9 +29,14 @@ public interface IBookingRepository
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Removes the booking and returns it, or reports <c>booking.not_found</c> if it has already
-    /// gone. This is the single arbiter of a cancellation race: two callers can both decide a
-    /// booking is cancellable, and only one of them can remove it.
+    /// Removes the booking and returns it, unless the booking has already gone
+    /// (<c>booking.not_found</c>) or has already started (<c>booking.cancel_after_start</c>).
+    /// <para>
+    /// The instant is a parameter because the decision and the write must be one step: a store that
+    /// judges BR-9 itself, against the instant the caller read, cannot be overtaken by the clock
+    /// between deciding and writing. The domain still owns the rule — this is the only place the
+    /// port needed to learn about time, and it is the amendment S-005 made to ADR-0001's claim.
+    /// </para>
     /// </summary>
-    ValueTask<Result<Booking>> RemoveAsync(Guid id, CancellationToken cancellationToken);
+    ValueTask<Result<Booking>> RemoveAsync(Guid id, DateTimeOffset nowUtc, CancellationToken cancellationToken);
 }
