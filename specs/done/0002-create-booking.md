@@ -1,6 +1,6 @@
 # Spec 0002 — Create a booking
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0002-plan.md`
 
@@ -111,7 +111,7 @@ for free slots. Those are separate specs and each one is smaller once this exist
       round and one narrow re-review, both in separate read-only sessions
 - [x] Docs / ADRs updated if behavior or architecture changed — the precedence order,
       `request.too_large` → 413, `GET /bookings/{id}`, the attendee-count double check, and ADR-0004
-- [ ] Spec moved to `specs/done/` (it becomes immutable there) — at merge
+- [x] Spec moved to `specs/done/` (it becomes immutable there) — in the commit that closes this slice
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
