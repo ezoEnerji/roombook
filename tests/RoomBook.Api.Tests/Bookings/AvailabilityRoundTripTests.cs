@@ -11,6 +11,13 @@ namespace RoomBook.Api.Tests.Bookings;
 /// </summary>
 public sealed class AvailabilityRoundTripTests
 {
+    /// <summary>
+    /// Passed to the search and to every booking made from its answers. Explicit rather than relying
+    /// on the request helper's default, so a change to that default cannot quietly stop this test
+    /// from covering the capacity rule.
+    /// </summary>
+    private const int SearchedAttendeeCount = 4;
+
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [Fact]
@@ -24,7 +31,7 @@ public sealed class AvailabilityRoundTripTests
         // without it and booking with it would leave the capacity rule untested here.
         using JsonDocument proposals = await SearchAsync(
             client,
-            "durationMinutes=90&from=2026-09-15T00:00:00Z&to=2026-09-19T00:00:00Z&attendeeCount=4");
+            $"durationMinutes=90&from=2026-09-15T00:00:00Z&to=2026-09-19T00:00:00Z&attendeeCount={SearchedAttendeeCount}");
 
         IReadOnlyList<(string RoomId, string Start, string End)> candidates = proposals.RootElement
             .EnumerateArray()
@@ -40,7 +47,7 @@ public sealed class AvailabilityRoundTripTests
         {
             HttpResponseMessage created = await PostAsync(
                 client,
-                Body(roomId: roomId, start: start, end: end),
+                Body(roomId: roomId, start: start, end: end, attendeeCount: SearchedAttendeeCount),
                 Token);
 
             Assert.Equal(HttpStatusCode.Created, created.StatusCode);

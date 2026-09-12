@@ -1,6 +1,6 @@
 # Spec 0003 — Availability search
 
-- Status: Draft
+- Status: Shipped
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0003-plan.md`
 
@@ -58,49 +58,64 @@ candidates by anything other than time, and reserving a proposed slot atomically
 
 ## Acceptance criteria
 
-- [ ] AC-1 — A search for a length inside a window returns candidate windows for every room, each one
+- [x] AC-1 — A search for a length inside a window returns candidate windows for every room, each one
       exactly the requested length, inside that room's opening hours, and clear of existing bookings.
       Each contiguous free stretch contributes its earliest fitting candidate and no more.
-- [ ] AC-2 — Candidates are aligned to the quarter hour on the room's local clock (`:00`, `:15`, `:30`,
+- [x] AC-2 — Candidates are aligned to the quarter hour on the room's local clock (`:00`, `:15`, `:30`,
       `:45`) and ordered earliest first; ties between rooms break by room name, ordinally.
-- [ ] AC-3 — Narrowing the search to one room returns candidates for that room only; an unknown room
+- [x] AC-3 — Narrowing the search to one room returns candidates for that room only; an unknown room
       is refused with `404` and `room.not_found`.
-- [ ] AC-4 — Naming an attendee count excludes rooms whose capacity is below it, and includes a room
+- [x] AC-4 — Naming an attendee count excludes rooms whose capacity is below it, and includes a room
       whose capacity equals it.
-- [ ] AC-5 — **Every returned candidate is accepted by a booking request.** Proven by taking each
+- [x] AC-5 — **Every returned candidate is accepted by a booking request.** Proven by taking each
       candidate the search proposes and creating it, with no refusals.
-- [ ] AC-6 — A candidate never overlaps an existing booking, and a candidate may begin exactly when an
+- [x] AC-6 — A candidate never overlaps an existing booking, and a candidate may begin exactly when an
       existing booking ends (BR-3).
-- [ ] AC-7 — When nothing fits — a fully booked day, or a window entirely outside opening hours — the
+- [x] AC-7 — When nothing fits — a fully booked day, or a window entirely outside opening hours — the
       answer is `200` with an empty list, never `404` and never an error.
-- [ ] AC-8 — A requested length outside the bookable range is refused with `422` and
+- [x] AC-8 — A requested length outside the bookable range is refused with `422` and
       `booking.duration_out_of_range`, because "no booking may be 5 minutes long" and "nothing is free"
       are different answers.
-- [ ] AC-9 — A window longer than 31 days is refused with `400` and `request.invalid`, and so is a
+- [x] AC-9 — A window longer than 31 days is refused with `400` and `request.invalid`, and so is a
       window whose end is not after its start.
-- [ ] AC-10 — A window that reaches into the past yields candidates only from now onwards; a window
+- [x] AC-10 — A window that reaches into the past yields candidates only from now onwards; a window
       entirely in the past yields an empty list.
-- [ ] AC-11 — A window reaching beyond the 90-day horizon yields candidates only up to the horizon.
-- [ ] AC-12 — An existing booking that does not sit on the grid (10:07–11:07) does not shift the grid:
+- [x] AC-11 — A window reaching beyond the 90-day horizon yields candidates only up to the horizon.
+- [x] AC-12 — An existing booking that does not sit on the grid (10:07–11:07) does not shift the grid:
       candidates stay on the quarter hour and simply skip the occupied time.
-- [ ] AC-13 — On a day when the room's zone changes offset, candidates are still aligned to the room's
+- [x] AC-13 — On a day when the room's zone changes offset, candidates are still aligned to the room's
       local quarter hour and still inside its local opening hours.
-- [ ] AC-14 — An answer carries at most 50 candidates, applied *after* ordering so the earliest ones
+- [x] AC-14 — An answer carries at most 50 candidates, applied *after* ordering so the earliest ones
       survive truncation.
-- [ ] AC-15 — Time-dependent behaviour is proven with a controlled clock; no test reads the real time.
+- [x] AC-15 — Time-dependent behaviour is proven with a controlled clock; no test reads the real time.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof — the map in `specs/plans/0003-plan.md`, corrected
+      after build to the names the tests carry; 162 tests
+- [x] `scripts/check` green — locally and in CI
+- [x] Independent review done; real findings fixed, noise rejected with written rationale — one review
+      round (no blockers) and one narrow re-review, both in separate read-only sessions
+- [x] Docs updated — the one-candidate-per-stretch rule in `docs/domain.md`; the `durationMinutes`
+      shape, the 50-candidate cap and the refusal-versus-empty-list distinction in `docs/conventions.md`
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 0 after approval — the self-critique round did its job before the gate this time |
+| Fix rounds | 2 — the review findings, then the round-trip and cap proofs after the re-review |
+| Review findings: real / noise | 9 real / 1 noise. No blockers, and both majors were missing *proof* rather than broken behaviour |
+| Regressions introduced | 0 — the 114 tests from S-001 and S-002 stayed green throughout |
+| Bugs escaped to production | 0 — not deployed |
+
+## What this slice taught
+
+Three of the failing tests during this slice were **my own arithmetic**, not the code: a stretch of 37
+minutes that I expected to hold an hour, and two windows I had placed in the past. That is now the
+pattern across three slices, and it is worth naming — the tests are catching the person writing them,
+which is exactly what they are for.
+
+One finding could not be turned into a test: the grid walk now re-aligns to the room's local quarter
+hour each step, but no real time zone can demonstrate the difference, because every offset and
+daylight-saving delta in use is a multiple of fifteen minutes. The fix stands on reasoning, and both
+the code and the plan say so rather than implying a proof exists.
