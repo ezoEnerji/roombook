@@ -6,6 +6,8 @@
 ## Language & framework versions
 
 - C# on **.NET 9** (`net9.0`). Retargeting requires an ADR.
+- The SDK is pinned in `global.json`, so a developer machine and CI run the same MSBuild — otherwise
+  the runner's newest SDK wins and can change what `dotnet test` even does. Bumping it is an ADR.
 - ASP.NET Core **Minimal API** (no MVC controllers). `System.Text.Json` for serialisation.
 - **xUnit v3** for tests; `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`) for time.
 - Shared build settings live in `Directory.Build.props` (created by S-001): `Nullable=enable`,
