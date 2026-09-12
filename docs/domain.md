@@ -36,8 +36,9 @@ drives how each rule is tested (`docs/testing.md`).
   are not instants: they are recurring wall-clock times, stored and returned as local `HH:mm` next to
   the Room's time zone. Converting them to UTC would move a room's opening time on daylight-saving
   days, which is why this rule is about points in time and not about repeating ones.
-- **BR-6** `attendeeCount` never exceeds `room.capacity`. (A value below 1 is a field-limit violation
-  rejected at the API edge, not a capacity question — see `docs/conventions.md`.)
+- **BR-6** `attendeeCount` never exceeds `room.capacity`. A value below 1 is not a capacity question
+  but a malformed request: it is reported at the API edge as `request.invalid`, and the domain refuses
+  it as well, so the rule holds for any caller that arrives another way.
 - **BR-7** A Booking starts at most 90 days after "now", inclusive: exactly 90 days ahead is accepted.
 - **BR-8** A Booking starts strictly after "now": `start == now` is rejected, and so is anything earlier.
 - **BR-9** A Booking may be cancelled only before its start; cancelling at or after the start is

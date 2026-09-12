@@ -10,32 +10,39 @@ using RoomBook.Domain.Rooms;
 namespace RoomBook.Api.Tests;
 
 /// <summary>
-/// Boots the real composition root. Passing rooms replaces the seeded set, which is how the
-/// empty-installation case is reachable at all — and proof that seeding is a composition-root
-/// concern rather than something baked into the storage adapter.
+/// Boots the real composition root. Passing rooms replaces the seeded set — which is how the
+/// empty-installation case is reachable at all — and passing a clock makes the time-dependent rules
+/// deterministic instead of depending on the day the suite happens to run.
 /// </summary>
 internal sealed class RoomBookApplication : WebApplicationFactory<Program>
 {
     private readonly IReadOnlyList<Room>? _rooms;
+    private readonly TimeProvider? _clock;
 
-    public RoomBookApplication(IReadOnlyList<Room>? rooms = null)
+    public RoomBookApplication(IReadOnlyList<Room>? rooms = null, TimeProvider? clock = null)
     {
         _rooms = rooms;
+        _clock = clock;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        if (_rooms is null)
-        {
-            return;
-        }
-
-        IReadOnlyList<Room> rooms = _rooms;
+        IReadOnlyList<Room>? rooms = _rooms;
+        TimeProvider? clock = _clock;
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<IRoomRepository>();
-            services.AddSingleton<IRoomRepository>(_ => new InMemoryRoomRepository(rooms));
+            if (rooms is not null)
+            {
+                services.RemoveAll<IRoomRepository>();
+                services.AddSingleton<IRoomRepository>(_ => new InMemoryRoomRepository(rooms));
+            }
+
+            if (clock is not null)
+            {
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton(clock);
+            }
         });
     }
 }

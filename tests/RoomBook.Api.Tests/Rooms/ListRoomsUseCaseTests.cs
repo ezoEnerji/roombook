@@ -1,5 +1,6 @@
 using RoomBook.Application.Rooms;
 using RoomBook.Domain.Rooms;
+using RoomBook.Domain.Shared;
 
 namespace RoomBook.Api.Tests.Rooms;
 
@@ -51,5 +52,14 @@ public sealed class ListRoomsUseCaseTests
 
         public ValueTask<IReadOnlyList<Room>> GetAllAsync(CancellationToken cancellationToken) =>
             ValueTask.FromResult(_rooms);
+
+        public ValueTask<Result<Room>> FindAsync(Guid id, CancellationToken cancellationToken)
+        {
+            Room? room = _rooms.FirstOrDefault(candidate => candidate.Id == id);
+
+            return ValueTask.FromResult(room is null
+                ? Result<Room>.Failure(ErrorCodes.RoomNotFound, "no room")
+                : Result<Room>.Success(room));
+        }
     }
 }

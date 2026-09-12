@@ -46,6 +46,7 @@ that builds each route, not to this file:
 | Route | Purpose |
 |---|---|
 | `POST /bookings` | Create a booking; rejection rules BR-1, BR-2, BR-4, BR-6, BR-7, BR-8 apply |
+| `GET /bookings/{id}` | Read one booking |
 | `GET /bookings` | List bookings |
 | `DELETE /bookings/{id}` | Cancel a booking (BR-9) |
 | `GET /rooms` | List rooms |

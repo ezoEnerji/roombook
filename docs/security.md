@@ -14,8 +14,11 @@
 ## Input & output
 - All external input is validated at the API edge: shape, field limits, ranges and timestamp format.
   The domain independently re-validates every rejection rule (BR-1, BR-2, BR-4, BR-6, BR-7, BR-8, BR-9)
-  and never trusts the caller. Purely structural checks — field lengths, `attendeeCount ≥ 1`, ISO-8601
-  format — stay at the edge, because a malformed value never reaches a domain type in the first place.
+  and never trusts the caller. Checks about the *shape* of a request — field lengths, the ISO-8601
+  format, the 32 KB body limit — are reported at the edge, because the domain never sees a value in
+  that state. One is deliberately enforced in both places: the domain also refuses an attendee count
+  below one, since a booking type that could hold zero attendees would be an open door for the next
+  caller that arrives without going through HTTP.
 - Field limits: `title` ≤ 200 characters, `organizer` ≤ 100 characters, `attendeeCount` ≥ 1 and
   ≤ `room.capacity`, `room.capacity` ≥ 1, availability queries span at most 31 days, request bodies at
   most 32 KB.
