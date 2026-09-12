@@ -1,13 +1,15 @@
 # AGENTS.md — Project Rules
 
-> **STATUS: NOT CONFIGURED.** This workspace has not been adapted to a project yet.
-> The only correct first action is the bootstrap workflow (`workflows/bootstrap.md`).
-> Until bootstrap completes and rewrites this file, do not write application code.
+**RoomBook** — a meeting-room booking API for one office: create and cancel bookings, detect
+conflicts, and search for free slots that fit a requested duration. V1 is in-memory and anonymous.
+Stack: .NET 9 · ASP.NET Core Minimal API · xUnit v3 · lightweight hexagonal (Domain → Application
+→ Api). The product *is* rules **BR-1…BR-9** (`docs/domain.md`) — read them before planning — and
+the boundaries **FD-1…FD-6** (`docs/architecture.md`) — read them before coding.
 
 ## Operating mode
 
-**Mode: unset** — bootstrap sets this to `lite` or `strict` (see `workflows/README.md`).
-Every workflow honors the gates of the current mode.
+**Mode: lite** — Spec → Plan → **[GATE: human]** → Build → Independent Review → Verify
+(see `workflows/README.md`). Independent review is never skipped, in any mode.
 
 ## Invariant rules (these survive bootstrap — never delete or weaken them)
 
