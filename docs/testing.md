@@ -5,7 +5,8 @@
 ## The contract
 - Every acceptance criterion maps to at least one test (criterion ↔ test map lives in the plan).
 - Tests assert **behavior**, not implementation details or mere status codes.
-- The whole suite runs inside `scripts/check` — one command, everywhere.
+- The whole suite runs inside `scripts/check` — one command, everywhere. (S-001 is what makes this
+  true: it creates the projects and uncomments the steps in `scripts/check.conf`.)
 
 ## Frameworks & layout
 
@@ -52,8 +53,9 @@ are created by S-001, which is also where `scripts/check` stops being a no-op an
 - **Availability search**: returned slots align to the 15-minute grid, are ordered earliest-first, and
   never include a slot that a subsequent create would reject.
 - **Forbidden dependencies** FD-1…FD-6, as executable assertions.
-- **The HTTP contract**: each error code maps to its documented status; unknown JSON members are
-  rejected; timestamps are serialised as ISO-8601 `Z`.
+- **The HTTP contract**: each error code maps to its documented status; a successful create returns
+  `201` with a `Location` header, a cancel returns `204`, reads return `200` with an empty array when
+  nothing matches; unknown JSON members are rejected; timestamps are serialised as ISO-8601 `Z`.
 
 "Sufficiently tested" is defined by this list, not by a coverage percentage: a rule without an
 accepting *and* a rejecting test is not done.

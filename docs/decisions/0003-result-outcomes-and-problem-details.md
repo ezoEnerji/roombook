@@ -5,9 +5,10 @@
 
 ## Context
 
-Nine business rules (BR-1…BR-9) reject bookings for reasons a client must be able to tell apart: an
-overlap is a different situation from a booking outside business hours, and a late cancellation is
-different again. Clients need a stable, machine-readable signal; humans need a readable message; tests
+Seven of the nine business rules (BR-1, BR-2, BR-4, BR-6, BR-7, BR-8, BR-9) reject bookings for reasons
+a client must be able to tell apart: an overlap is a different situation from a booking outside business
+hours, and a late cancellation is different again. The other two are not rejections — BR-3 permits
+back-to-back bookings and BR-5 fixes the wire format. Clients need a stable, machine-readable signal; humans need a readable message; tests
 need to assert the specific reason rather than "some 4xx".
 
 Two mechanisms compete for carrying that signal: exceptions thrown by the domain and caught by
@@ -29,7 +30,7 @@ additional `code` member. The code-to-status mapping is a fixed table in `docs/c
 
 What it buys: rejection is part of each use case's signature, so a caller cannot forget a case the way
 an uncaught exception allows. Error codes give acceptance criteria something exact to assert, which is
-what makes "one accepting and one rejecting test per rule" meaningful. The domain stays HTTP-free, and
+what makes "one accepting and one rejecting test per rejection rule" meaningful. The domain stays HTTP-free, and
 the status mapping stops being re-decided per endpoint.
 
 What it costs: `Result` plumbing is explicit work at every call site and reads more verbosely than a

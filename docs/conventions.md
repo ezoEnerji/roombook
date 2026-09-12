@@ -50,8 +50,11 @@ Two rules are deliberately absent from the table. **BR-3** permits back-to-back 
 nothing to reject — its counterpart in the table is `booking.overlap` (BR-2). **BR-5** is a format
 contract: a missing, malformed or non-UTC timestamp is `request.invalid` at the API edge. In the same
 way, `attendeeCount < 1` is a field-limit violation (`request.invalid`), while exceeding the room's
-capacity is the domain rule BR-6. Cancelling an already-cancelled booking is `booking.not_found`.
+capacity is the domain rule BR-6. Cancelling an already-cancelled booking is `booking.not_found` —
+the booking no longer exists, so it is an identifier question rather than a BR-9 violation.
 
+- Success statuses are just as fixed: create → `201` with a `Location` header, cancel → `204` with no
+  body, reads → `200`. An empty result is `200` with an empty array, never `404`.
 - Never leaked to clients: stack traces, exception type names, configuration values, or the organizer
   name of somebody else's booking.
 
@@ -69,19 +72,20 @@ capacity is the domain rule BR-6. Cancelling an already-cancelled booking is `bo
 - Domain value types and DTOs are immutable `record`s; collections are exposed read-only.
 - Field limits: `title` ≤ 200 characters, `organizer` ≤ 100 characters, `attendeeCount` ≥ 1,
   `room.capacity` ≥ 1, availability queries span at most 31 days, request bodies at most 32 KB.
-- The 15-minute grid belongs to availability search results only. Booking times are never rounded,
-  snapped or realigned — `10:07` is a legitimate start (`docs/domain.md`, explicit non-rules).
+- The 15-minute grid belongs to availability search results only and is anchored to the room's local
+  clock (`:00`, `:15`, `:30`, `:45`). Booking times themselves are never rounded, snapped or
+  realigned — `10:07` is a legitimate start (`docs/domain.md`, explicit non-rules).
 
 ## Enforced by tooling
 
 - Compiler: nullable analysis plus `TreatWarningsAsErrors` (the `build` step of `scripts/check`).
 - `dotnet format --verify-no-changes` with `.editorconfig` (both created by S-001) — style is never a
   review topic.
-- Architecture tests assert FD-1…FD-6, including the banned-package and ambient-clock rules.
-- Every rejection rule carries an accepting and a rejecting test; BR-3 and BR-5 are tested differently
-  (`docs/testing.md`).
-- `dotnet list package --vulnerable` runs in CI.
+- From S-001: architecture tests assert FD-1…FD-6, including the banned-package and ambient-clock rules.
+- From S-001: every rejection rule carries an accepting and a rejecting test; BR-3 and BR-5 are tested
+  differently (`docs/testing.md`).
+- `dotnet list package --vulnerable` runs in CI as soon as a solution exists.
 
-The three items above that need a test project or a formatter config become live when S-001 uncomments
-the steps in `scripts/check.conf`. Until that lands, `scripts/check` is a green no-op and these rules
-bind review only — which is exactly why no code may merge before S-001.
+Everything marked "from S-001" needs a test project or a formatter config, so it becomes live when S-001
+uncomments the steps in `scripts/check.conf`. Until that lands, `scripts/check` is a green no-op and
+those rules bind review only — which is exactly why no code may merge before S-001.

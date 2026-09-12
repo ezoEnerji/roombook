@@ -28,9 +28,10 @@ architecture tests for the rules the compiler cannot see (FD-1…FD-6 in `docs/a
 ## Consequences
 
 What it buys: the rules are tested in milliseconds without a host or a database, so the accepting and
-rejecting test per business rule is cheap enough to be non-negotiable. Swapping in a database becomes
-one new adapter plus one DI line, with zero changes to domain code. Boundaries are machine-checked, so
-review time goes to behavior instead of layering arguments.
+rejecting test per rejection rule is cheap enough to be non-negotiable. Swapping in a database becomes
+one new adapter plus one DI line, with zero changes to domain code. Boundaries become machine-checked
+the moment the architecture tests run (S-001 activates them), so review time goes to behavior instead
+of layering arguments.
 
 What it costs: three projects and a solution instead of one file — more ceremony for the first
 endpoint. Ports add an indirection that is pure overhead while the only implementation is a dictionary.
