@@ -1,6 +1,6 @@
 # Spec 0001 — Solution skeleton and room listing
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0001-plan.md`
 
@@ -80,7 +80,7 @@ BR-1…BR-9. The only domain rule here is the one that decides whether a Room ma
       round plus a narrow re-review of the fix commit, both from files in separate sessions
 - [x] Docs / ADRs updated if behavior or architecture changed — BR-5 instants/wall-clock distinction,
       the BusinessHours and seed-identifier exceptions, and the FD-1/FD-3/FD-5 scope notes
-- [ ] Spec moved to `specs/done/` (it becomes immutable there) — at merge
+- [x] Spec moved to `specs/done/` (it becomes immutable there) — in the commit that closes this slice
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
