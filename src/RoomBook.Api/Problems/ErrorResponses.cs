@@ -33,7 +33,7 @@ public static class ErrorResponses
     /// framework default table. The values for 400, 404, 409 and 422 are the ones ASP.NET already
     /// produced, so nothing observable changed for them when this moved.
     /// </summary>
-    private static IReadOnlyDictionary<int, string> TypeByStatus { get; } = new Dictionary<int, string>
+    public static IReadOnlyDictionary<int, string> TypeByStatus { get; } = new Dictionary<int, string>
     {
         [StatusCodes.Status400BadRequest] = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
         [StatusCodes.Status404NotFound] = "https://tools.ietf.org/html/rfc9110#section-15.5.5",

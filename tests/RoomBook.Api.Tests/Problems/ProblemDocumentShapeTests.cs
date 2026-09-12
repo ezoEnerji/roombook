@@ -32,20 +32,32 @@ public sealed class ProblemDocumentShapeTests
             ("overlap (409)", await OverlapAsync(client)),
         ];
 
-        foreach ((string description, HttpResponseMessage response) in refusals)
+        string[] expected = ["code", "detail", "status", "title", "type"];
+
+        try
         {
-            using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Token));
+            foreach ((string description, HttpResponseMessage response) in refusals)
+            {
+                using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Token));
 
-            IReadOnlyList<string> members = document.RootElement.EnumerateObject()
-                .Select(property => property.Name)
-                .OrderBy(name => name, StringComparer.Ordinal)
-                .ToList();
+                IReadOnlyList<string> members = document.RootElement.EnumerateObject()
+                    .Select(property => property.Name)
+                    .OrderBy(name => name, StringComparer.Ordinal)
+                    .ToList();
 
-            Assert.Equal(
-                ["code", "detail", "status", "title", "type"],
-                members);
-
-            response.Dispose();
+                // Named in the message: five cases share this assertion, and a collection diff alone
+                // would not say which one broke.
+                Assert.True(
+                    members.SequenceEqual(expected, StringComparer.Ordinal),
+                    $"{description}: expected [{string.Join(", ", expected)}] but got [{string.Join(", ", members)}]");
+            }
+        }
+        finally
+        {
+            foreach ((string _, HttpResponseMessage response) in refusals)
+            {
+                response.Dispose();
+            }
         }
     }
 
