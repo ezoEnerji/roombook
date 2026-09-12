@@ -158,6 +158,53 @@ public sealed class AvailabilitySearchTests
     }
 
     [Fact]
+    public void Find_ForARoomOnAHalfHourOffset_AlignsToItsLocalQuarterHour()
+    {
+        // Asia/Kolkata is UTC+05:30, so its local quarter hours land on :00 and :30 past the UTC
+        // hour. Alignment that quietly used UTC would still look plausible — and be half an hour out.
+        Room kolkata = RoomIn("Asia/Kolkata");
+
+        IReadOnlyList<AvailableSlot> found = AvailabilitySearch.Find(
+            kolkata,
+            [],
+            Tuesday(),
+            OneHour,
+            Now);
+
+        AvailableSlot only = Assert.Single(found);
+        Assert.Equal(Utc("2026-09-15T03:30:00Z"), only.Slot.Start);
+    }
+
+    [Fact]
+    public void Find_ForARoomOnAHalfHourOffset_SkipsAnOffGridBookingToTheNextLocalQuarter()
+    {
+        Room kolkata = RoomIn("Asia/Kolkata");
+        Booking booked = Booking.Create(
+            Guid.CreateVersion7(),
+            kolkata,
+            "Existing",
+            "Abdullah",
+            SlotOf("2026-09-15T05:07:00Z", "2026-09-15T06:07:00Z"),
+            4,
+            Now.AddDays(-1)).Value;
+
+        IReadOnlyList<AvailableSlot> found = AvailabilitySearch.Find(
+            kolkata,
+            [booked],
+            Tuesday(),
+            OneHour,
+            Now);
+
+        Assert.Equal(2, found.Count);
+
+        // The room opens at 09:00 local, which is 03:30Z on a half-hour offset.
+        Assert.Equal(Utc("2026-09-15T03:30:00Z"), found[0].Slot.Start);
+
+        // 06:07Z is 11:37 in Kolkata; the next local quarter hour is 11:45, which is 06:15Z.
+        Assert.Equal(Utc("2026-09-15T06:15:00Z"), found[1].Slot.Start);
+    }
+
+    [Fact]
     public void Find_OnADaylightSavingDay_StaysOnTheRoomsLocalQuarterHour()
     {
         Room berlin = Room.Create(
@@ -198,10 +245,12 @@ public sealed class AvailabilitySearchTests
         4,
         Now.AddDays(-1)).Value;
 
-    private static Room IstanbulRoom() => Room.Create(
+    private static Room IstanbulRoom() => RoomIn("Europe/Istanbul");
+
+    private static Room RoomIn(string timeZoneId) => Room.Create(
         Guid.Parse("0192a1b2-c3d4-7a01-8b01-000000000001"),
         "Ada",
         8,
-        "Europe/Istanbul",
+        timeZoneId,
         BusinessHours.Create(new TimeOnly(9, 0), new TimeOnly(18, 0)).Value).Value;
 }

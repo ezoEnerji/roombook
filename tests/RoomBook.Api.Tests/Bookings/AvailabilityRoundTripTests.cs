@@ -19,9 +19,12 @@ public sealed class AvailabilityRoundTripTests
         using RoomBookApplication application = new(clock: Clock());
         using HttpClient client = application.CreateClient();
 
+        // The attendee count is part of the question, so it is part of the booking too: searching
+        // for four people and booking for four is what makes the promise meaningful. Searching
+        // without it and booking with it would leave the capacity rule untested here.
         using JsonDocument proposals = await SearchAsync(
             client,
-            "durationMinutes=90&from=2026-09-15T00:00:00Z&to=2026-09-19T00:00:00Z");
+            "durationMinutes=90&from=2026-09-15T00:00:00Z&to=2026-09-19T00:00:00Z&attendeeCount=4");
 
         IReadOnlyList<(string RoomId, string Start, string End)> candidates = proposals.RootElement
             .EnumerateArray()

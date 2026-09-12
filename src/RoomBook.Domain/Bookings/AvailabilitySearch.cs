@@ -72,9 +72,14 @@ public static class AvailabilitySearch
         // The earliest *acceptable* candidate, not merely the earliest one. A stretch that begins at
         // the current instant would otherwise be discarded whole, because BR-8 is strict about "after
         // now" — so the grid is walked forward until a candidate passes or the stretch runs out.
+        // Each step is re-aligned rather than advanced by a flat fifteen minutes, so the grid stays
+        // the room's *local* grid even if the offset changes inside the stretch. No test can
+        // distinguish the two today — every real zone's offsets and daylight-saving deltas are
+        // multiples of fifteen minutes, so a flat step happens to stay aligned — but relying on that
+        // coincidence is not the same as being right.
         for (DateTimeOffset start = AlignUpToQuarterHour(stretchStart, zone);
              start + duration <= stretchEnd;
-             start = start.AddTicks(QuarterHourTicks))
+             start = AlignUpToQuarterHour(start.AddTicks(QuarterHourTicks), zone))
         {
             Result<TimeSlot> slot = TimeSlot.Create(start, start + duration);
             if (slot.IsFailure)
@@ -153,7 +158,9 @@ public static class AvailabilitySearch
     private static IEnumerable<DateOnly> LocalDaysCovering(TimeSlot window, TimeZoneInfo zone)
     {
         DateOnly first = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(window.Start, zone).DateTime);
-        DateOnly last = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(window.End, zone).DateTime);
+
+        // The window is half-open, so its end instant belongs to the next day and must not add one.
+        DateOnly last = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(window.End.AddTicks(-1), zone).DateTime);
 
         for (DateOnly day = first; day <= last; day = day.AddDays(1))
         {

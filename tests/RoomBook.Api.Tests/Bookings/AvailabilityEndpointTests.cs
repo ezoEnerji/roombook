@@ -154,7 +154,7 @@ public sealed class AvailabilityEndpointTests
     }
 
     [Fact]
-    public async Task Get_WhenManyCandidatesExist_ReturnsAtMostFiftyEarliestFirst()
+    public async Task Get_WhenManyCandidatesExist_KeepsTheFiftyEarliestRatherThanTheFirstFifty()
     {
         using RoomBookApplication application = new(clock: Clock());
         using HttpClient client = application.CreateClient();
@@ -170,6 +170,94 @@ public sealed class AvailabilityEndpointTests
 
         Assert.Equal(50, starts.Count);
         Assert.Equal(starts.OrderBy(start => start), starts);
+
+        // Truncating before ordering — fifty candidates from the first room, say — would also produce
+        // fifty sorted results. What it could not produce is the three rooms interleaved on day one,
+        // earliest room first.
+        Assert.Equal(
+            ["Kapadokya", "Ada", "Boğaziçi"],
+            body.RootElement.EnumerateArray().Take(3).Select(slot => slot.GetProperty("roomName").GetString()));
+        Assert.Equal(new DateTimeOffset(2026, 9, 15, 5, 30, 0, TimeSpan.Zero), starts[0]);
+    }
+
+    [Fact]
+    public async Task Get_WhenTheWindowCrossesTheBookingHorizon_ProposesNothingBeyondIt()
+    {
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+
+        // Now is 2026-09-14, so the horizon is 2026-12-13. This window straddles it and stays inside
+        // the 31-day search cap. One room, so the 50-candidate cap cannot hide the far end.
+        using JsonDocument body = await SearchAsync(
+            client,
+            $"durationMinutes=60&from=2026-11-28T00:00:00Z&to=2026-12-23T00:00:00Z&roomId={AdaId}");
+
+        IReadOnlyList<DateTimeOffset> starts = body.RootElement.EnumerateArray()
+            .Select(slot => slot.GetProperty("start").GetDateTimeOffset())
+            .ToList();
+
+        DateTimeOffset horizon = Now.AddDays(90);
+
+        Assert.NotEmpty(starts);
+        Assert.All(starts, start => Assert.True(start <= horizon, $"{start:O} is past the horizon {horizon:O}"));
+        Assert.Equal(new DateTime(2026, 12, 12), starts[^1].UtcDateTime.Date);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-30)]
+    public async Task Get_WhenTheRequestedLengthIsNotPositive_Returns422(int minutes)
+    {
+        HttpResponseMessage response = await RefusedAsync($"durationMinutes={minutes}&{Tuesday}");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal(ErrorCodes.DurationOutOfRange, await CodeAsync(response, Token));
+    }
+
+    [Fact]
+    public async Task Get_WhenTheWindowIsExactlyThirtyOneDays_IsAccepted()
+    {
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+
+        // The cap is 31 days inclusive; one day more is the case the malformed-query theory covers.
+        using JsonDocument body = await SearchAsync(
+            client,
+            $"durationMinutes=60&from=2026-09-15T00:00:00Z&to=2026-10-16T00:00:00Z&roomId={AdaId}");
+
+        Assert.NotEmpty(body.RootElement.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Get_WhenNoRoomIsBigEnough_Returns200AndAnEmptyList()
+    {
+        // The largest seeded room holds 24 people.
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            new Uri($"/availability?durationMinutes=60&{Tuesday}&attendeeCount=25", UriKind.Relative),
+            Token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", await response.Content.ReadAsStringAsync(Token));
+    }
+
+    [Fact]
+    public async Task Get_WhenTheWindowLiesOutsideOpeningHours_Returns200AndAnEmptyList()
+    {
+        // 16:00–20:00Z is 19:00–23:00 in Istanbul, after every seeded room has closed.
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            new Uri(
+                "/availability?durationMinutes=60&from=2026-09-15T16:00:00Z&to=2026-09-15T20:00:00Z",
+                UriKind.Relative),
+            Token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", await response.Content.ReadAsStringAsync(Token));
     }
 
     [Fact]
