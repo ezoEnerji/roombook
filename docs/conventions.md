@@ -39,6 +39,7 @@ The one blessed pattern: **rule violations are values, not exceptions.**
 | Code | Rule | Status |
 |---|---|---|
 | `request.invalid` | malformed body, unknown JSON member, field limit violation | 400 |
+| `request.too_large` | request body over 32 KB | 413 |
 | `room.not_found` / `booking.not_found` | unknown identifier | 404 |
 | `booking.overlap` | BR-2 | 409 |
 | `booking.cancel_after_start` | BR-9 | 409 |

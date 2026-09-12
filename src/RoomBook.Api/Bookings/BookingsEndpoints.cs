@@ -36,6 +36,12 @@ public static class BookingsEndpoints
             // members are rejected by configuration, so a typo cannot be silently ignored.
             return ErrorResponses.Invalid("The request body is not valid JSON, or contains an unknown field.");
         }
+        catch (BadHttpRequestException exception) when (exception.StatusCode == StatusCodes.Status413PayloadTooLarge)
+        {
+            // A chunked body that only reveals its size while being read: the server's limit stops
+            // it here rather than in the middleware, and the answer must still be ours.
+            return ErrorResponses.TooLarge(RequestBodyLimit.MaxBytes);
+        }
 
         if (request is null)
         {

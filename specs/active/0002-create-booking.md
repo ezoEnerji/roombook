@@ -1,6 +1,6 @@
 # Spec 0002 — Create a booking
 
-- Status: Draft
+- Status: In progress
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0002-plan.md`
 
@@ -98,6 +98,10 @@ for free slots. Those are separate specs and each one is smaller once this exist
 - [ ] AC-17 — A request that breaks several rules at once is refused with the code the documented
       order selects — for example a reservation that is both in the past and six hours long comes
       back as `booking.start_in_past`, not `booking.duration_out_of_range`.
+- [ ] AC-18 — A request body over the documented 32 KB limit is refused with `413` and
+      `request.too_large`, and a body under it is judged on its contents instead. Added during
+      triage: the limit was written in `docs/security.md` at bootstrap and had never been
+      implemented, so it was a rule with no proof.
 
 ## Definition of Done
 - [ ] Every acceptance criterion mapped to proof (test or reproducible observation)

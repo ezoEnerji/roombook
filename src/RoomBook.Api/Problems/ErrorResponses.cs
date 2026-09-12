@@ -14,6 +14,7 @@ public static class ErrorResponses
     public static IReadOnlyDictionary<string, int> StatusByCode { get; } = new Dictionary<string, int>(StringComparer.Ordinal)
     {
         [ErrorCodes.RequestInvalid] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.RequestTooLarge] = StatusCodes.Status413PayloadTooLarge,
         [ErrorCodes.RoomNotFound] = StatusCodes.Status404NotFound,
         [ErrorCodes.BookingNotFound] = StatusCodes.Status404NotFound,
         [ErrorCodes.BookingOverlap] = StatusCodes.Status409Conflict,
@@ -45,4 +46,13 @@ public static class ErrorResponses
 
     public static IResult Invalid(string message) =>
         From(new Error(ErrorCodes.RequestInvalid, message));
+
+    /// <summary>
+    /// A body over the documented limit gets its own code and status rather than joining
+    /// <c>request.invalid</c>: a distinct 413 is what lets a test prove the limit is doing the work,
+    /// instead of an oversized field triggering a 400 that looks identical.
+    /// </summary>
+    public static IResult TooLarge(int maxBytes) => From(new Error(
+        ErrorCodes.RequestTooLarge,
+        $"The request body is limited to {maxBytes / 1024} KB."));
 }

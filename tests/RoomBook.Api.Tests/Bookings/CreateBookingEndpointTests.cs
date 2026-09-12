@@ -197,6 +197,41 @@ public sealed class CreateBookingEndpointTests
     }
 
     [Fact]
+    public async Task Post_WhenTheBodyIsOverTheLimit_Returns413()
+    {
+        // docs/security.md caps request bodies at 32 KB. This gets its own status precisely so the
+        // test proves the limit: an oversized field would also produce a 400, which would look the
+        // same whether or not the limit existed.
+        HttpResponseMessage response = await RefusedAsync(Body(title: new string('a', 40 * 1024)));
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        Assert.Equal(ErrorCodes.RequestTooLarge, await CodeAsync(response, Token));
+    }
+
+    [Fact]
+    public async Task Post_WhenTheBodyIsUnderTheLimit_IsRefusedForItsContentRatherThanItsSize()
+    {
+        // Just under 32 KB: the limit must not fire, so this comes back as an ordinary field-limit
+        // refusal. Without this, an over-eager limit would look like a passing test above.
+        HttpResponseMessage response = await RefusedAsync(Body(title: new string('a', 30 * 1024)));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.RequestInvalid, await CodeAsync(response, Token));
+    }
+
+    [Fact]
+    public async Task Post_WhenTooLongAndOutsideBusinessHours_Returns422WithDurationCode()
+    {
+        // The documented order puts BR-4 before BR-1, and this proves it over HTTP as well as in
+        // the domain: tomorrow at 06:00 local is before opening, and six hours is over the limit.
+        HttpResponseMessage response = await RefusedAsync(
+            Body(start: "2026-09-15T03:00:00Z", end: "2026-09-15T09:00:00Z"));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal(ErrorCodes.DurationOutOfRange, await CodeAsync(response, Token));
+    }
+
+    [Fact]
     public async Task Post_WhenRefused_ReturnsAProblemDocumentThatLeaksNothing()
     {
         HttpResponseMessage response = await RefusedAsync(Body(attendeeCount: 5));
@@ -225,7 +260,11 @@ public sealed class CreateBookingEndpointTests
             PostAsync(second, Body(), Token));
 
         Assert.Equal(1, responses.Count(response => response.StatusCode == HttpStatusCode.Created));
-        Assert.Equal(1, responses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+
+        HttpResponseMessage conflict = Assert.Single(
+            responses,
+            response => response.StatusCode == HttpStatusCode.Conflict);
+        Assert.Equal(ErrorCodes.BookingOverlap, await CodeAsync(conflict, Token));
 
         foreach (HttpResponseMessage response in responses)
         {

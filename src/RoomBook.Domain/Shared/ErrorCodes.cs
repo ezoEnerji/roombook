@@ -9,6 +9,7 @@ namespace RoomBook.Domain.Shared;
 public static class ErrorCodes
 {
     public const string RequestInvalid = "request.invalid";
+    public const string RequestTooLarge = "request.too_large";
     public const string RoomNotFound = "room.not_found";
     public const string BookingNotFound = "booking.not_found";
     public const string BookingOverlap = "booking.overlap";

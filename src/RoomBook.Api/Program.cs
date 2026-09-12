@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using RoomBook.Api.Bookings;
 using RoomBook.Api.Infrastructure;
+using RoomBook.Api.Problems;
 using RoomBook.Api.Rooms;
 using RoomBook.Application.Bookings;
 using RoomBook.Application.Rooms;
@@ -28,6 +29,8 @@ builder.Services.AddScoped<CreateBookingUseCase>();
 builder.Services.AddScoped<GetBookingUseCase>();
 
 WebApplication app = builder.Build();
+
+app.UseRequestBodyLimit();
 
 app.MapRooms();
 app.MapBookings();
