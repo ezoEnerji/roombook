@@ -1,4 +1,5 @@
 using RoomBook.Domain.Rooms;
+using RoomBook.Domain.Shared;
 
 namespace RoomBook.Application.Rooms;
 
@@ -10,4 +11,10 @@ namespace RoomBook.Application.Rooms;
 public interface IRoomRepository
 {
     ValueTask<IReadOnlyList<Room>> GetAllAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The room with this identifier, or a failure carrying <c>room.not_found</c>. Absence is an
+    /// outcome the caller must handle, so it is a result rather than a null.
+    /// </summary>
+    ValueTask<Result<Room>> FindAsync(Guid id, CancellationToken cancellationToken);
 }

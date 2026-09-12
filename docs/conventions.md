@@ -57,6 +57,11 @@ the booking no longer exists, so it is an identifier question rather than a BR-9
 
 - Success statuses are just as fixed: create → `201` with a `Location` header, cancel → `204` with no
   body, reads → `200`. An empty result is `200` with an empty array, never `404`.
+- **One rule at a time, in a fixed order.** A request that breaks several rules is refused with the
+  first of these that applies: request shape (`400`) → the room exists (`404`) → BR-8 (the past) →
+  BR-7 (the horizon) → BR-4 (duration) → BR-1 (opening hours) → BR-6 (capacity) → BR-2 (overlap).
+  Context-free checks come first and the only one that must consult other bookings comes last. The
+  order is a contract, not an implementation detail: it is what makes a refusal reproducible.
 - Never leaked to clients: stack traces, exception type names, configuration values, or the organizer
   name of somebody else's booking.
 

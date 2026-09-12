@@ -1,5 +1,6 @@
 using RoomBook.Application.Rooms;
 using RoomBook.Domain.Rooms;
+using RoomBook.Domain.Shared;
 
 namespace RoomBook.Api.Infrastructure;
 
@@ -19,4 +20,13 @@ public sealed class InMemoryRoomRepository : IRoomRepository
 
     public ValueTask<IReadOnlyList<Room>> GetAllAsync(CancellationToken cancellationToken) =>
         ValueTask.FromResult(_rooms);
+
+    public ValueTask<Result<Room>> FindAsync(Guid id, CancellationToken cancellationToken)
+    {
+        Room? room = _rooms.FirstOrDefault(candidate => candidate.Id == id);
+
+        return ValueTask.FromResult(room is null
+            ? Result<Room>.Failure(ErrorCodes.RoomNotFound, "There is no room with that identifier.")
+            : Result<Room>.Success(room));
+    }
 }

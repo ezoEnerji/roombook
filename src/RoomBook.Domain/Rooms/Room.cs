@@ -1,3 +1,4 @@
+using RoomBook.Domain.Bookings;
 using RoomBook.Domain.Shared;
 
 namespace RoomBook.Domain.Rooms;
@@ -31,6 +32,30 @@ public sealed record Room
     public string TimeZoneId { get; }
 
     public BusinessHours Hours { get; }
+
+    /// <summary>
+    /// BR-1: the window lies inside this room's opening hours, judged in this room's own time zone.
+    /// The UTC instants are converted here, which is why a daylight-saving change moves the UTC range
+    /// a room accepts without moving its opening time.
+    /// </summary>
+    public bool IsWithinBusinessHours(TimeSlot slot)
+    {
+        TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+        DateTime startLocal = TimeZoneInfo.ConvertTime(slot.Start, zone).DateTime;
+        DateTime endLocal = TimeZoneInfo.ConvertTime(slot.End, zone).DateTime;
+
+        if (startLocal.Date != endLocal.Date)
+        {
+            // Opening hours describe one local day, so a window that crosses local midnight cannot
+            // fit inside them however short it is.
+            return false;
+        }
+
+        TimeOnly start = TimeOnly.FromDateTime(startLocal);
+        TimeOnly end = TimeOnly.FromDateTime(endLocal);
+
+        return start >= Hours.Open && start < Hours.Close && end <= Hours.Close;
+    }
 
     public static Result<Room> Create(
         Guid id,
