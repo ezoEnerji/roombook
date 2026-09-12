@@ -52,38 +52,41 @@ BR-1…BR-9. The only domain rule here is the one that decides whether a Room ma
 
 ## Acceptance criteria
 
-- [ ] AC-1 — `./scripts/check` runs format, build and test steps (it is no longer a no-op) and exits
+- [x] AC-1 — `./scripts/check` runs format, build and test steps (it is no longer a no-op) and exits
       green; the same command is green in CI on the pull request.
-- [ ] AC-2 — Every forbidden dependency FD-1…FD-6 is expressed as a pure inspection rule, and each rule
+- [x] AC-2 — Every forbidden dependency FD-1…FD-6 is expressed as a pure inspection rule, and each rule
       is tested twice: it passes on the real code and detects a violation. A rule that has only ever
       been seen to pass is not evidence that it works. Detection is proven against a synthetic input
       *and*, for the rules that read compiled output, against an assembly that breaks them on purpose —
       otherwise a broken metadata reader would keep every rule silently green.
-- [ ] AC-3 — Listing rooms returns `200` with all three seeded rooms, each carrying an identifier, a
+- [x] AC-3 — Listing rooms returns `200` with all three seeded rooms, each carrying an identifier, a
       name, a capacity, an IANA time zone, an opening time and a closing time as local `HH:mm` values,
       serialised in `camelCase`.
-- [ ] AC-4 — Ordering is deterministic: rooms come back sorted by name using culture-independent
+- [x] AC-4 — Ordering is deterministic: rooms come back sorted by name using culture-independent
       (ordinal) comparison, identically on every call and on every machine.
-- [ ] AC-5 — With no rooms in storage, listing returns `200` with an empty array — never `404`.
-- [ ] AC-6 — A Room with a capacity below 1 is rejected at construction.
-- [ ] AC-7 — A Room with a time zone the system cannot resolve is rejected at construction.
-- [ ] AC-8 — A Room whose opening time is not before its closing time is rejected at construction.
-- [ ] AC-9 — Room identifiers are stable across restarts, so a client may store one and use it later.
+- [x] AC-5 — With no rooms in storage, listing returns `200` with an empty array — never `404`.
+- [x] AC-6 — A Room with a capacity below 1 is rejected at construction.
+- [x] AC-7 — A Room with a time zone the system cannot resolve is rejected at construction.
+- [x] AC-8 — A Room whose opening time is not before its closing time is rejected at construction.
+- [x] AC-9 — Room identifiers are stable across restarts, so a client may store one and use it later.
       The published identifier of each seeded room is asserted by value; "the two calls agree with
       each other" is not proof, because both could drift together.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation) — table in the
+      pull request; 47 tests
+- [x] `scripts/check` green — locally and in CI, both jobs
+- [x] Independent review done; real findings fixed, noise rejected with written rationale — one review
+      round plus a narrow re-review of the fix commit, both from files in separate sessions
+- [x] Docs / ADRs updated if behavior or architecture changed — BR-5 instants/wall-clock distinction,
+      the BusinessHours and seed-identifier exceptions, and the FD-1/FD-3/FD-5 scope notes
+- [ ] Spec moved to `specs/done/` (it becomes immutable there) — at merge
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 1 — AC-2 and AC-9 were *tightened* at triage, after the review showed their proofs were weaker than their wording |
+| Fix rounds | 1 review fix round, plus 2 self-inflicted CI fixes (executable bit, SDK pin) |
+| Review findings: real / noise | 8 real / 3 noise (one of the three was my fault: I pointed the reviewer at a commit hash I had already amended away) |
+| Regressions introduced | 0 — there was no prior behavior to regress |
+| Bugs escaped to production | 0 — not deployed |

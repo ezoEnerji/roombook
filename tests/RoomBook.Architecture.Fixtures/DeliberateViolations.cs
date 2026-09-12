@@ -10,7 +10,9 @@ namespace RoomBook.Architecture.Fixtures;
 /// into "the rule detects a violation".
 /// <para>
 /// Do not clean this file up. Removing a violation does not fix anything — it makes the matching
-/// architecture test fail, because the test's job is to find the violation here.
+/// architecture test fail, because the test's job is to find the violation here. Adjusting those
+/// tests to match a cleaned-up fixture is the forbidden move: it turns the proofs off silently
+/// (`docs/testing.md`, protected-tests rule).
 /// </para>
 /// </summary>
 public static class DeliberateViolations

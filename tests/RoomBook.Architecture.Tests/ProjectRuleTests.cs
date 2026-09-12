@@ -97,7 +97,18 @@ public sealed class ProjectRuleTests
         // Seven projects: three under src, three test projects, and the deliberately violating
         // fixture. Plus Directory.Build.props. A sweep that finds nothing would report success for
         // every rule, so the counts are part of the contract.
-        Assert.Equal(7, projects.Count);
-        Assert.Equal(8, buildFiles.Count);
+        Assert.True(
+            projects.Count == 7,
+            $"Expected 7 projects, found {projects.Count}: {StringsOf(projects)}");
+        Assert.True(
+            buildFiles.Count == 8,
+            $"Expected 8 build files, found {buildFiles.Count}: {StringsOf(buildFiles)}");
     }
+
+    /// <summary>
+    /// Adding a project is supposed to fail the counts above. Listing what was found turns
+    /// "expected 7, got 8" into a message that says which file arrived.
+    /// </summary>
+    private static string StringsOf(IReadOnlyList<string> paths) =>
+        string.Join(", ", paths.Select(Path.GetFileName));
 }
