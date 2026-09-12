@@ -61,60 +61,63 @@ for free slots. Those are separate specs and each one is smaller once this exist
 
 ## Acceptance criteria
 
-- [ ] AC-1 — A valid reservation is created: the response is `201` with a `Location` header and a body
+- [x] AC-1 — A valid reservation is created: the response is `201` with a `Location` header and a body
       carrying the new identifier and the values that were sent.
-- [ ] AC-2 — The created reservation can be read back by its identifier and matches what was stored.
-- [ ] AC-3 — A reservation overlapping an existing one in the same room is refused with `409` and the
+- [x] AC-2 — The created reservation can be read back by its identifier and matches what was stored.
+- [x] AC-3 — A reservation overlapping an existing one in the same room is refused with `409` and the
       code `booking.overlap`; the same window in a *different* room is accepted.
-- [ ] AC-4 — Touching reservations are accepted in both directions: one starting exactly when another
+- [x] AC-4 — Touching reservations are accepted in both directions: one starting exactly when another
       ends, and one ending exactly when another starts (BR-3).
-- [ ] AC-5 — Opening hours (BR-1): a reservation ending exactly at closing time is accepted; one
+- [x] AC-5 — Opening hours (BR-1): a reservation ending exactly at closing time is accepted; one
       starting at closing time, or reaching past it, is refused with `422` and
       `booking.outside_business_hours`.
-- [ ] AC-6 — Duration (BR-4): exactly fifteen minutes and exactly four hours are accepted; fourteen
+- [x] AC-6 — Duration (BR-4): exactly fifteen minutes and exactly four hours are accepted; fourteen
       minutes and four hours plus one minute are refused with `422` and
       `booking.duration_out_of_range`.
-- [ ] AC-7 — Attendees (BR-6): a count equal to the room's capacity is accepted; one above it is
+- [x] AC-7 — Attendees (BR-6): a count equal to the room's capacity is accepted; one above it is
       refused with `422` and `booking.attendees_exceed_capacity`. A count below one is a malformed
       request: `400` with `request.invalid`.
-- [ ] AC-8 — The past (BR-8): a start earlier than now is refused with `422` and
+- [x] AC-8 — The past (BR-8): a start earlier than now is refused with `422` and
       `booking.start_in_past`, and so is a start exactly equal to now.
-- [ ] AC-9 — The horizon (BR-7): a start exactly ninety days ahead is accepted; ninety days plus one
+- [x] AC-9 — The horizon (BR-7): a start exactly ninety days ahead is accepted; ninety days plus one
       minute is refused with `422` and `booking.too_far_in_future`.
-- [ ] AC-10 — A reservation for a room that does not exist is refused with `404` and `room.not_found`.
-- [ ] AC-11 — A malformed request is refused with `400` and `request.invalid`: a body that is not
+- [x] AC-10 — A reservation for a room that does not exist is refused with `404` and `room.not_found`.
+- [x] AC-11 — A malformed request is refused with `400` and `request.invalid`: a body that is not
       valid JSON, an unknown member, a missing required field, a title over 200 characters, an
       organizer name over 100 characters, and a timestamp that is not UTC ISO-8601.
-- [ ] AC-12 — Every refusal is an RFC 9457 `ProblemDetails` document carrying the `code` member, and
+- [x] AC-12 — Every refusal is an RFC 9457 `ProblemDetails` document carrying the `code` member, and
       no response ever contains a stack trace, an exception type name or a configuration value.
-- [ ] AC-13 — When two requests for the same room and window are handled concurrently, exactly one
+- [x] AC-13 — When two requests for the same room and window are handled concurrently, exactly one
       succeeds and the other is refused with `booking.overlap`.
-- [ ] AC-14 — Opening hours are judged in the room's time zone, proven on a day when that zone changes
+- [x] AC-14 — Opening hours are judged in the room's time zone, proven on a day when that zone changes
       offset: the same UTC window is inside business hours before the transition and outside it after.
-- [ ] AC-15 — Every time-dependent rule (BR-7, BR-8) is proven with a controlled clock; no test reads
+- [x] AC-15 — Every time-dependent rule (BR-7, BR-8) is proven with a controlled clock; no test reads
       the real time.
-- [ ] AC-16 — Reading a reservation that does not exist is refused with `404` and
+- [x] AC-16 — Reading a reservation that does not exist is refused with `404` and
       `booking.not_found`.
-- [ ] AC-17 — A request that breaks several rules at once is refused with the code the documented
+- [x] AC-17 — A request that breaks several rules at once is refused with the code the documented
       order selects — for example a reservation that is both in the past and six hours long comes
       back as `booking.start_in_past`, not `booking.duration_out_of_range`.
-- [ ] AC-18 — A request body over the documented 32 KB limit is refused with `413` and
+- [x] AC-18 — A request body over the documented 32 KB limit is refused with `413` and
       `request.too_large`, and a body under it is judged on its contents instead. Added during
       triage: the limit was written in `docs/security.md` at bootstrap and had never been
       implemented, so it was a rule with no proof.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation) — table in the
+      pull request; 114 tests
+- [x] `scripts/check` green — locally and in CI
+- [x] Independent review done; real findings fixed, noise rejected with written rationale — one review
+      round and one narrow re-review, both in separate read-only sessions
+- [x] Docs / ADRs updated if behavior or architecture changed — the precedence order,
+      `request.too_large` → 413, `GET /bookings/{id}`, the attendee-count double check, and ADR-0004
+- [ ] Spec moved to `specs/done/` (it becomes immutable there) — at merge
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 1 — AC-18 was *added* during triage, when the review found a documented 32 KB body limit that had never been implemented |
+| Fix rounds | 2 — the review findings, then a correction after the re-review showed the body limit only worked under Kestrel |
+| Review findings: real / noise | 7 real / 2 noise across both rounds |
+| Regressions introduced | 0 — S-001's tests stayed green throughout, including the room contract |
+| Bugs escaped to production | 0 — not deployed |
