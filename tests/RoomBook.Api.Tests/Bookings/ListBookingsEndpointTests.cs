@@ -103,6 +103,40 @@ public sealed class ListBookingsEndpointTests
     }
 
     [Fact]
+    public async Task Get_WhenTheBookingStraddlesTheWindowEdge_IncludesIt()
+    {
+        // AC-8 says "touches the window", not "sits inside it": a meeting that starts before the
+        // window and runs into it is exactly what a caller asking about that window wants to see.
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+
+        await PostAsync(client, TuesdayBooking(AdaId, "09:00", "11:00"), Token);
+
+        using JsonDocument body = await ListAsync(
+            client,
+            "from=2026-09-15T10:00:00Z&to=2026-09-15T12:00:00Z");
+
+        Assert.Single(body.RootElement.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Get_WhenTheWindowIsExactlyThirtyOneDays_IsAccepted()
+    {
+        // The 31-day limit is inclusive, and the availability endpoint has the same pin. Without
+        // this one, a regression could tighten the rule on this route alone.
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+
+        await PostAsync(client, TuesdayBooking(AdaId), Token);
+
+        using JsonDocument body = await ListAsync(
+            client,
+            "from=2026-09-15T00:00:00Z&to=2026-10-16T00:00:00Z");
+
+        Assert.Single(body.RootElement.EnumerateArray());
+    }
+
+    [Fact]
     public async Task Get_WhenTheRoomDoesNotExist_Returns404()
     {
         using RoomBookApplication application = new(clock: Clock());

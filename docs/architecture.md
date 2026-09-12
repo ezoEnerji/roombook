@@ -82,6 +82,12 @@ Known limit: the ambient-clock check (FD-3) reads assembly metadata, so a clock 
 reflection would not appear in it. That is an accepted gap while nothing in the product depends on
 time; it should be revisited when the time-dependent rules (BR-7, BR-8, BR-9) are implemented.
 
+Known limit: **cancelling is three steps** — find the booking, ask the domain whether BR-9 permits it,
+remove it — and the instant is read once, in the middle. With the in-memory adapter the removal
+completes synchronously under a lock, so a booking cannot realistically start in the gap. A store that
+answers over a network widens that gap, and the adapter for it must judge BR-9 and remove inside one
+transaction with a freshly read instant, rather than trusting the sequence above.
+
 ## Deliberately out of scope
 
 Persistent storage, authentication and authorisation (V2 — see `docs/security.md`), multi-office and

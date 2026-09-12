@@ -60,9 +60,14 @@ public sealed class CancelBookingEndpointTests
 
         await client.DeleteAsync(booking, Token);
         HttpResponseMessage second = await client.DeleteAsync(booking, Token);
+        using JsonDocument document = JsonDocument.Parse(await second.Content.ReadAsStringAsync(Token));
 
+        // The full problem shape, not only the code: a 404 is as much part of the error contract as
+        // a 409, and the envelope is the part a client parses.
         Assert.Equal(HttpStatusCode.NotFound, second.StatusCode);
-        Assert.Equal(ErrorCodes.BookingNotFound, await CodeAsync(second, Token));
+        Assert.Equal("application/problem+json", second.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(ErrorCodes.BookingNotFound, document.RootElement.GetProperty("code").GetString());
+        Assert.Equal(404, document.RootElement.GetProperty("status").GetInt32());
     }
 
     [Fact]

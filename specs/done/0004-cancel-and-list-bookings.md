@@ -1,6 +1,6 @@
 # Spec 0004 — Cancel and list bookings
 
-- Status: Draft
+- Status: Shipped
 - Mode: lite (from AGENTS.md at creation time)
 - Plan: `specs/plans/0004-plan.md`
 
@@ -53,41 +53,56 @@ makes cancellation the sharpest argument for the authentication deferred in ADR-
 
 ## Acceptance criteria
 
-- [ ] AC-1 — Cancelling a booking that has not started returns `204` with no body.
-- [ ] AC-2 — After cancelling, the same window can be booked again in the same room.
-- [ ] AC-3 — Cancelling at exactly the booking's start is refused with `409` and
+- [x] AC-1 — Cancelling a booking that has not started returns `204` with no body.
+- [x] AC-2 — After cancelling, the same window can be booked again in the same room.
+- [x] AC-3 — Cancelling at exactly the booking's start is refused with `409` and
       `booking.cancel_after_start`; so is cancelling after it has started.
-- [ ] AC-4 — Cancelling the same booking twice returns `404` and `booking.not_found` the second time.
-- [ ] AC-5 — Cancelling an identifier that never existed returns `404` and `booking.not_found` — the
+- [x] AC-4 — Cancelling the same booking twice returns `404` and `booking.not_found` the second time.
+- [x] AC-5 — Cancelling an identifier that never existed returns `404` and `booking.not_found` — the
       same answer as the previous case, because the caller's situation is the same.
-- [ ] AC-6 — A cancelled booking is gone from a direct read (`404`) and from the list.
-- [ ] AC-7 — The availability search proposes the freed time again after a cancellation.
-- [ ] AC-8 — Listing returns the bookings whose time touches the window, ordered by start and then by
+- [x] AC-6 — A cancelled booking is gone from a direct read (`404`) and from the list.
+- [x] AC-7 — The availability search proposes the freed time again after a cancellation.
+- [x] AC-8 — Listing returns the bookings whose time touches the window, ordered by start and then by
       room name, ordinally.
-- [ ] AC-9 — Listing narrowed to one room returns that room's bookings only; an unknown room is
+- [x] AC-9 — Listing narrowed to one room returns that room's bookings only; an unknown room is
       refused with `404` and `room.not_found`.
-- [ ] AC-10 — A window with no bookings returns `200` and an empty array.
-- [ ] AC-11 — A malformed listing query is refused with `400` and `request.invalid`: a missing `from`
+- [x] AC-10 — A window with no bookings returns `200` and an empty array.
+- [x] AC-11 — A malformed listing query is refused with `400` and `request.invalid`: a missing `from`
       or `to`, an end not after the start, a window longer than 31 days, a non-UTC instant, and a
       `roomId` that is not a GUID.
-- [ ] AC-12 — A list carries at most 200 bookings, truncated after ordering so the earliest survive.
-- [ ] AC-13 — The BR-9 boundary is proven with a controlled clock: cancelling one minute before the
+- [x] AC-12 — A list carries at most 200 bookings, truncated after ordering so the earliest survive.
+- [x] AC-13 — The BR-9 boundary is proven with a controlled clock: cancelling one minute before the
       start succeeds, and at exactly the start does not.
-- [ ] AC-14 — Every response body carries exactly the documented fields, and every refusal is an
+- [x] AC-14 — Every response body carries exactly the documented fields, and every refusal is an
       RFC 9457 problem document with its `code`.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof — the map in `specs/plans/0004-plan.md`; 198 tests
+- [x] `scripts/check` green — locally and in CI
+- [x] Independent review done; real findings fixed, the rest accepted with written rationale — one
+      review round in a separate read-only session, no blockers
+- [x] Docs updated — the 200-item cap and why it differs from the 50-candidate cap
+      (`docs/conventions.md`), and the cancellation sequence a networked store must tighten
+      (`docs/architecture.md`, known limits)
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 0 after approval |
+| Fix rounds | 1 |
+| Review findings: real / noise | 7 findings, no blockers: 4 fixed, 3 accepted with written rationale |
+| Regressions introduced | 0 — the 162 tests from S-001…S-003 stayed green, including the availability search whose port method this slice replaced |
+| Bugs escaped to production | 0 — not deployed |
+
+## Accepted rather than fixed
+
+- **Cancelling reads the clock once, between finding the booking and removing it.** With the in-memory
+  adapter the removal completes synchronously under a lock, so a booking cannot realistically start in
+  that gap. Recorded in `docs/architecture.md` as a known limit, with what a networked store must do
+  instead — judge BR-9 and remove inside one transaction.
+- **The 200-item cap is proven at the use-case level, not over HTTP.** Same split the availability cap
+  uses, and the same reason: the cap is a use-case decision, while the endpoint's job is the contract.
+- **The list returns organizer names.** That is the point of "see what is booked", and
+  `docs/security.md` forbids *logging* personal data rather than returning a booking's own fields. It
+  is also another reason the V2 authentication in ADR-0002 matters.

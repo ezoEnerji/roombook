@@ -38,19 +38,27 @@ public sealed class ListBookingsUseCase
             return Result<IReadOnlyList<Booking>>.Failure(window.Error);
         }
 
+        IReadOnlyList<Room> rooms;
+
         if (query.RoomId is Guid roomId)
         {
             // An unknown room is a mistake worth reporting, not an empty answer: the caller would
-            // otherwise read "nothing is booked" from a typo in an identifier.
+            // otherwise read "nothing is booked" from a typo in an identifier. The room found here is
+            // also the only one whose name the ordering can need.
             Result<Room> room = await _rooms.FindAsync(roomId, cancellationToken);
             if (room.IsFailure)
             {
                 return Result<IReadOnlyList<Booking>>.Failure(room.Error);
             }
+
+            rooms = [room.Value];
+        }
+        else
+        {
+            rooms = await _rooms.GetAllAsync(cancellationToken);
         }
 
         IReadOnlyList<Booking> bookings = await _bookings.ListAsync(window.Value, query.RoomId, cancellationToken);
-        IReadOnlyList<Room> rooms = await _rooms.GetAllAsync(cancellationToken);
         Dictionary<Guid, string> namesById = rooms.ToDictionary(room => room.Id, room => room.Name);
 
         return Result<IReadOnlyList<Booking>>.Success(bookings
