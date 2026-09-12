@@ -32,7 +32,10 @@ drives how each rule is tested (`docs/testing.md`).
 - **BR-2** Two Bookings in the same Room never overlap.
 - **BR-3** Back-to-back is allowed: a Booking may start exactly when another one in the same Room ends.
 - **BR-4** A Booking's duration is at least 15 minutes and at most 4 hours, both bounds inclusive.
-- **BR-5** All times are UTC, ISO-8601 with `Z`, both on the wire and in storage.
+- **BR-5** All *instants* are UTC, ISO-8601 with `Z`, both on the wire and in storage. BusinessHours
+  are not instants: they are recurring wall-clock times, stored and returned as local `HH:mm` next to
+  the Room's time zone. Converting them to UTC would move a room's opening time on daylight-saving
+  days, which is why this rule is about points in time and not about repeating ones.
 - **BR-6** `attendeeCount` never exceeds `room.capacity`. (A value below 1 is a field-limit violation
   rejected at the API edge, not a capacity question — see `docs/conventions.md`.)
 - **BR-7** A Booking starts at most 90 days after "now", inclusive: exactly 90 days ahead is accepted.

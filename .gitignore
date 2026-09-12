@@ -12,5 +12,12 @@ Thumbs.db
 # Logs
 *.log
 
+# .NET build output
+bin/
+obj/
+[Tt]est[Rr]esults/
+*.user
+.vs/
+
 # Claude Code personal settings (shared settings.json IS committed after init)
 .claude/settings.local.json

@@ -6,6 +6,8 @@
 ## Language & framework versions
 
 - C# on **.NET 9** (`net9.0`). Retargeting requires an ADR.
+- The SDK is pinned in `global.json`, so a developer machine and CI run the same MSBuild — otherwise
+  the runner's newest SDK wins and can change what `dotnet test` even does. Bumping it is an ADR.
 - ASP.NET Core **Minimal API** (no MVC controllers). `System.Text.Json` for serialisation.
 - **xUnit v3** for tests; `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`) for time.
 - Shared build settings live in `Directory.Build.props` (created by S-001): `Nullable=enable`,
@@ -61,12 +63,16 @@ the booking no longer exists, so it is an identifier question rather than a BR-9
 ## Data rules
 
 - Identifiers: `Guid` created with `Guid.CreateVersion7()` (time-ordered). Never sequential integers.
+  Seed data is the exception: fixed literal `Guid`s, because a client may store a room's identifier
+  and must still find it after a restart. Generated identifiers are for entities created at runtime.
 - Timestamps: `DateTimeOffset` in UTC everywhere; ISO-8601 with `Z` on the wire (BR-5).
   Durations: `TimeSpan`.
 - "Now" is owned by the `Application` layer through an injected `TimeProvider` and handed to the domain
   as a value; reading `DateTime.UtcNow` anywhere is a forbidden dependency (FD-3).
-- Business-hour arithmetic converts UTC into the room's IANA time zone. UTC is storage and transport
-  only; local time is a calculation, never a stored value.
+- Business-hour arithmetic converts UTC into the room's IANA time zone. For **instants** — a booking's
+  start and end — UTC is storage and transport, and local time is a calculation, never a stored value.
+  **BusinessHours are the deliberate exception:** an opening time is a recurring wall-clock fact, so it
+  is stored and returned as a local `HH:mm` together with the room's zone (`docs/domain.md`, BR-5).
 - JSON: `camelCase` members; unknown members are rejected (`JsonUnmappedMemberHandling.Disallow`).
 - Nullable reference types are enabled; domain types express absence explicitly, not with `null`.
 - Domain value types and DTOs are immutable `record`s; collections are exposed read-only.

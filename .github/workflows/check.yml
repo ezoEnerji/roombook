@@ -15,9 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The SDK comes from global.json so CI and a developer machine run the same MSBuild.
+      # Without it the runner's newest SDK wins, and a newer SDK changes how `dotnet test` works.
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          global-json-file: global.json
       - name: Verification contract
         run: |
           if [ -f scripts/check.conf ]; then

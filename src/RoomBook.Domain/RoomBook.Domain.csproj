@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- FD-1: this project references no other project and no NuGet package. BCL only. -->
+
+</Project>
