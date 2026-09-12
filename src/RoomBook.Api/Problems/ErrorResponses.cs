@@ -27,8 +27,25 @@ public static class ErrorResponses
     };
 
     /// <summary>
+    /// The `type` of each problem document. Owned here rather than left to the framework: ASP.NET
+    /// fills `type` from its own table of statuses, and 413 is not in it — so a 413 came back
+    /// missing a member every other refusal carried. An error contract should not vary with a
+    /// framework default table. The values for 400, 404, 409 and 422 are the ones ASP.NET already
+    /// produced, so nothing observable changed for them when this moved.
+    /// </summary>
+    public static IReadOnlyDictionary<int, string> TypeByStatus { get; } = new Dictionary<int, string>
+    {
+        [StatusCodes.Status400BadRequest] = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+        [StatusCodes.Status404NotFound] = "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+        [StatusCodes.Status409Conflict] = "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+        [StatusCodes.Status413PayloadTooLarge] = "https://tools.ietf.org/html/rfc9110#section-15.5.14",
+        [UnprocessableContent] = "https://tools.ietf.org/html/rfc4918#section-11.2",
+    };
+
+    /// <summary>
     /// An RFC 9457 problem document carrying the machine-readable code. The message is the domain's
-    /// sentence for a human; nothing else about the failure is disclosed.
+    /// sentence for a human; nothing else about the failure is disclosed. Every refusal has the same
+    /// members, whatever its status.
     /// </summary>
     public static IResult From(Error error)
     {
@@ -39,9 +56,17 @@ public static class ErrorResponses
                 "docs/conventions.md and to ErrorResponses.StatusByCode.");
         }
 
+        if (!TypeByStatus.TryGetValue(status, out string? type))
+        {
+            throw new InvalidOperationException(
+                $"Status {status} has no problem type. Add it to ErrorResponses.TypeByStatus so every " +
+                "refusal keeps the same shape.");
+        }
+
         return Results.Problem(
             detail: error.Message,
             statusCode: status,
+            type: type,
             extensions: new Dictionary<string, object?> { ["code"] = error.Code });
     }
 

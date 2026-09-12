@@ -27,6 +27,23 @@ public sealed class ErrorResponsesTests
     }
 
     [Fact]
+    public void EveryStatusTheContractUses_HasAProblemType()
+    {
+        // The sibling of the test above, and for the same reason: a status without a type throws,
+        // which would turn a documented refusal into a 500. Adding a status to the contract without
+        // a type now fails here instead of in production — which is exactly how the missing 413
+        // type reached a running server.
+        IReadOnlyList<int> statuses = ErrorResponses.StatusByCode.Values.Distinct().ToList();
+
+        IReadOnlyList<int> withoutAType = statuses
+            .Where(status => !ErrorResponses.TypeByStatus.ContainsKey(status))
+            .ToList();
+
+        Assert.NotEmpty(statuses);
+        Assert.Empty(withoutAType);
+    }
+
+    [Fact]
     public void StatusByCode_MatchesTheDocumentedTable()
     {
         // docs/conventions.md: 400 malformed, 404 unknown identifier, 409 state conflict,
