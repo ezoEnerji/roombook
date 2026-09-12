@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using RoomBook.Domain.Shared;
 using static RoomBook.Api.Tests.Bookings.BookingRequests;
@@ -203,6 +205,26 @@ public sealed class CreateBookingEndpointTests
         // test proves the limit: an oversized field would also produce a 400, which would look the
         // same whether or not the limit existed.
         HttpResponseMessage response = await RefusedAsync(Body(title: new string('a', 40 * 1024)));
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        Assert.Equal(ErrorCodes.RequestTooLarge, await CodeAsync(response, Token));
+    }
+
+    [Fact]
+    public async Task Post_WhenAChunkedBodyStreamsPastTheLimit_Returns413()
+    {
+        // No Content-Length to check, so the middleware's second mechanism has to do the work: the
+        // server's own limit stops the read and the endpoint turns that into our error contract.
+        using RoomBookApplication application = new(clock: Clock());
+        using HttpClient client = application.CreateClient();
+        using HttpRequestMessage request = new(HttpMethod.Post, new Uri("/bookings", UriKind.Relative));
+
+        request.Content = new StreamContent(
+            new MemoryStream(Encoding.UTF8.GetBytes(Body(title: new string('a', 40 * 1024)))));
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        request.Headers.TransferEncodingChunked = true;
+
+        HttpResponseMessage response = await client.SendAsync(request, Token);
 
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
         Assert.Equal(ErrorCodes.RequestTooLarge, await CodeAsync(response, Token));

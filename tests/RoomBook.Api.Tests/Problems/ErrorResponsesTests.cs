@@ -32,6 +32,7 @@ public sealed class ErrorResponsesTests
         // docs/conventions.md: 400 malformed, 404 unknown identifier, 409 state conflict,
         // 422 business-rule violation.
         Assert.Equal(400, ErrorResponses.StatusByCode[ErrorCodes.RequestInvalid]);
+        Assert.Equal(413, ErrorResponses.StatusByCode[ErrorCodes.RequestTooLarge]);
         Assert.Equal(404, ErrorResponses.StatusByCode[ErrorCodes.RoomNotFound]);
         Assert.Equal(404, ErrorResponses.StatusByCode[ErrorCodes.BookingNotFound]);
         Assert.Equal(409, ErrorResponses.StatusByCode[ErrorCodes.BookingOverlap]);
